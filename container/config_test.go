@@ -1,12 +1,12 @@
 package container_test
 
 import (
-	"certificate-injector/container"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
+	"github.com/cloudfoundry/cert-injector/container"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

@@ -7,16 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var certInjectorBin string
-
-func TestCertificateInjector(t *testing.T) {
+func TestCertInjector(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "CertificateInjector Suite")
+	RunSpecs(t, "CertInjector Suite")
 }
-
-/*
-var _ = BeforeSuite(func() {
-	certInjectorBin, err = gexec.Build("certificate-injector")
-	Expect(err).ToNot(HaveOccurred())
-})
-*/

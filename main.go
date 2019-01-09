@@ -1,14 +1,13 @@
 package main
 
 import (
-	"certificate-injector/command"
-	"certificate-injector/container"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 
-	"code.cloudfoundry.org/hydrator/oci-directory"
+	"github.com/cloudfoundry/cert-injector/command"
+	"github.com/cloudfoundry/cert-injector/container"
 )
 
 const (
@@ -19,10 +18,6 @@ const (
 	hydrateBin      = "c:\\var\\vcap\\packages\\hydrate\\hydrate.exe"
 )
 
-type image interface {
-	ContainsHydratorAnnotation(ociImagePath string) (bool, error)
-}
-
 type cmd interface {
 	Run(executable string, args ...string) error
 }
@@ -31,7 +26,7 @@ type conf interface {
 	Write(certData []byte) error
 }
 
-func Run(args []string, image image, cmd cmd, conf conf) error {
+func Run(args []string, cmd cmd, conf conf) error {
 	if len(args) < 4 {
 		return fmt.Errorf("usage: %s <driver_store> <cert_file> <image_uri>...\n", args[0])
 	}
@@ -171,13 +166,10 @@ func Run(args []string, image image, cmd cmd, conf conf) error {
 }
 
 func main() {
-
 	logger := log.New(os.Stderr, "", 0)
-	handler := directory.NewHandler("ociImageDir")
-	image := container.NewImage(handler)
 	cmd := command.NewCmd()
 	conf := container.NewConfig()
-	if err := Run(os.Args, image, cmd, conf); err != nil {
+	if err := Run(os.Args, cmd, conf); err != nil {
 		logger.Print(err)
 		os.Exit(1)
 	}
