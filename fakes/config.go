@@ -12,6 +12,10 @@ type Config struct {
 	}
 }
 
+func NewConfig() *Config {
+	return &Config{}
+}
+
 func (c *Config) Write(certData []byte) error {
 	c.WriteCall.CallCount++
 	c.WriteCall.Receives.CertData = certData

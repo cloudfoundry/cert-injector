@@ -5,9 +5,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 
-	"github.com/cloudfoundry/cert-injector/command"
-	"github.com/cloudfoundry/cert-injector/container"
+	"code.cloudfoundry.org/cert-injector/command"
+	"code.cloudfoundry.org/cert-injector/container"
+	"code.cloudfoundry.org/filelock"
 )
 
 const (
@@ -41,12 +43,12 @@ func Run(args []string, cmd cmd, conf conf) error {
 		return nil
 	}
 
-	// TODO: for each image_uri, check if it contains an annotation, remove that layer
-	// TODO: parse the arg image_uri for the oci image path
-	ociImageUri := args[3]
-	err = cmd.Run(hydrateBin, "remove-layer", "-ociImage", ociImageUri)
-	if err != nil {
-		return fmt.Errorf("hydrate.exe remove-layer failed: %s\n", err)
+	ociImageUris := args[3:]
+	for _, ociImageUri := range ociImageUris {
+		err = cmd.Run(hydrateBin, "remove-layer", "-ociImage", ociImageUri)
+		if err != nil {
+			return fmt.Errorf("hydrate.exe remove-layer failed: %s\n", err)
+		}
 	}
 
 	err = conf.Write(certData)
@@ -54,8 +56,7 @@ func Run(args []string, cmd cmd, conf conf) error {
 		return fmt.Errorf("Write container config failed: %s", err)
 	}
 
-	/*grootDriverStore := args[1]
-	grootImageUris := args[2:]
+	grootDriverStore := args[1]
 
 	// TODO: the hydrator that is altering the rootfs is not looking at this lock file anyway, so we are punting right now
 	lock, err := filelock.NewLocker(filepath.Join(os.TempDir(), LockFileName)).Open()
@@ -64,11 +65,10 @@ func Run(args []string, cmd cmd, conf conf) error {
 	}
 	defer lock.Close()
 
-
-
 	// workaround for https://github.com/Microsoft/hcsshim/issues/155
 	fmt.Printf("%s\n", "Deleting existing containers")
-	err = exec.Command(fmt.Sprintf("Get-ComputeProcess | foreach { & %s delete $_.Id }", wincBin)).Run()
+	//err = exec.Command(fmt.Sprintf("Get-ComputeProcess | foreach { & %s delete $_.Id }", wincBin)).Run()
+	err = cmd.Run("powershell.exe", "-c", fmt.Sprintf("Get-ComputeProcess | foreach { & %s delete $_.Id }", wincBin))
 	if err != nil {
 		return fmt.Errorf("Cannot delete existing containers\n")
 	}
@@ -79,20 +79,20 @@ func Run(args []string, cmd cmd, conf conf) error {
 	}
 
 	for _, file := range files {
-		err = exec.Command(fmt.Sprintf("%s --driver-store %s delete %s", grootBin, grootDriverStore, file.Name())).Run()
+		err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", file.Name())
 		if err != nil {
 			return fmt.Errorf("groot delete failed: %s\n", err)
 		}
 	}
 
-
-
 	fmt.Printf("%s\n", "Begin exporting layer")
-	for _, uri := range grootImageUris {
+	//	for _, uri := range ociImageUris {
+
+	/*
 		containerId := fmt.Sprintf("layer%d", int32(time.Now().Unix()))
 
 		fmt.Printf("%s\n", "Creating Volume")
-		cmd := exec.Command(fmt.Sprintf("%s --driver-store %s create %s", grootBin, grootDriverStore, uri))
+		err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri)
 		var stdoutBuffer bytes.Buffer
 		cmd.Stdout = &stdoutBuffer
 		cmd.Run()
@@ -113,6 +113,7 @@ func Run(args []string, cmd cmd, conf conf) error {
 			return fmt.Errorf("Failed to create bundle directory\n")
 		}
 
+		//TODO: merge the config.json previously created, with the output of groot and write it out as config.json
 		configBytes, err := json.Marshal(config)
 		if err != nil {
 			return fmt.Errorf("Failed to write config.json\n")
@@ -160,8 +161,8 @@ func Run(args []string, cmd cmd, conf conf) error {
 		if err != nil {
 			return fmt.Errorf("diff output file deletion failed\n")
 		}
-	}
 	*/
+	//	}
 	return nil
 }
 

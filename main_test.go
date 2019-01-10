@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	. "github.com/cloudfoundry/cert-injector"
-	"github.com/cloudfoundry/cert-injector/fakes"
+	. "code.cloudfoundry.org/cert-injector"
+	"code.cloudfoundry.org/cert-injector/fakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -19,8 +19,8 @@ var _ = Describe("cert-injector", func() {
 	)
 
 	BeforeEach(func() {
-		fakeCmd = &fakes.Cmd{}
-		fakeConfig = &fakes.Config{}
+		fakeCmd = fakes.NewCmd()
+		fakeConfig = fakes.NewConfig()
 
 		args = []string{"cert-injector.exe", "", "fakes/really-has-certs.crt", "first-image-uri"}
 	})
@@ -28,14 +28,14 @@ var _ = Describe("cert-injector", func() {
 	It("calls hydrator to remove the custom layer", func() {
 		err := Run(args, fakeCmd, fakeConfig)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(fakeCmd.RunCall.CallCount).To(Equal(1))
-		Expect(fakeCmd.RunCall.Receives.Executable).To(ContainSubstring("hydrate.exe"))
-		Expect(fakeCmd.RunCall.Receives.Args).To(ContainElement("first-image-uri"))
+		Expect(fakeCmd.RunCalls.CallCount("hydrate.exe")).NotTo(Equal(0))
+		Expect(fakeCmd.RunCalls.ReceivedArgs("hydrate.exe")).To(ContainElement("remove-layer"))
+		Expect(fakeCmd.RunCalls.ReceivedArgs("hydrate.exe")).To(ContainElement("first-image-uri"))
 	})
 
 	Context("when hydrator fails to remove the custom layer", func() {
 		BeforeEach(func() {
-			fakeCmd.RunCall.Returns.Error = errors.New("hydrator is unhappy")
+			fakeCmd.RunCalls.Returns("hydrate.exe", errors.New("hydrator is unhappy"))
 		})
 
 		It("should return a helpful error", func() {
@@ -86,6 +86,24 @@ var _ = Describe("cert-injector", func() {
 				err := Run(args, fakeCmd, fakeConfig)
 				Expect(err).To(MatchError("Write container config failed: banana"))
 			})
+		})
+	})
+
+	Describe("diff-exporter is called", func() {
+		It("with -bundlePath containing a valid config.json", func() {
+			/* For the config.json to be valid, it should contain the script to import cert */
+			err := Run(args, fakeCmd, fakeConfig)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fakeCmd.RunCalls.CallCount("diff-exporter.exe")).To(Equal(1))
+			Fail("TODO: INCOMPLETE")
+		})
+	})
+
+	It("hydrator is called with add-layer command exactly once", func() {
+	})
+
+	Context("When the hydrator is called with add-layer command", func() {
+		It("It was called with a layer that contains the required certificate", func() {
 		})
 	})
 
