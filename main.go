@@ -67,33 +67,33 @@ func Run(args []string, cmd cmd, conf conf) error {
 	defer lock.Close()
 
 	// workaround for https://github.com/Microsoft/hcsshim/issues/155
-	fmt.Printf("%s\n", "Deleting existing containers")
-	_, _, err = cmd.Run("powershell.exe", "-c", fmt.Sprintf("Get-ComputeProcess | foreach { & %s delete $_.Id }", wincBin))
-	if err != nil {
-		return fmt.Errorf("Cannot delete existing containers\n")
-	}
-
-	files, err := ioutil.ReadDir(fmt.Sprintf("%s\\volumes", grootDriverStore))
-	if !os.IsNotExist(err) {
-		return fmt.Errorf("groot delete failed: %s\n", err)
-	}
-
-	for _, file := range files {
-		_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", file.Name())
-		if err != nil {
-			return fmt.Errorf("groot delete failed: %s\n", err)
-		}
-	}
+	// fmt.Printf("%s\n", "Deleting existing containers")
+	// _, _, err = cmd.Run("powershell.exe", "-c", fmt.Sprintf("Get-ComputeProcess | foreach { & %s delete $_.Id }", wincBin))
+	// if err != nil {
+	// 	return fmt.Errorf("Cannot delete existing containers\n")
+	// }
+	//
+	// files, err := ioutil.ReadDir(fmt.Sprintf("%s\\volumes", grootDriverStore))
+	// if !os.IsNotExist(err) {
+	// 	return fmt.Errorf("groot delete failed: %s\n", err)
+	// }
+	//
+	// for _, file := range files {
+	// 	_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", file.Name())
+	// 	if err != nil {
+	// 		return fmt.Errorf("groot delete failed: %s", err)
+	// 	}
+	// }
 	// fmt.Printf("%s\n", "Begin exporting layer")
 	// for _, uri := range ociImageUris {
 	containerId := fmt.Sprintf("layer%d", int32(time.Now().Unix()))
 	//
-	// 	fmt.Printf("%s\n", "Creating Volume")
-	// 	var grootOutput []byte
-	// 	grootOutput, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri)
-	// 	if err != nil {
-	// 		return fmt.Errorf("Groot create failed\n")
-	// 	}
+	var grootOutput []byte
+	grootOutput, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", ociImageUris[0])
+	if err != nil {
+		return fmt.Errorf("groot create failed: %s", err)
+	}
+	_ = grootOutput
 	//
 	// 	var config map[string]interface{}
 	// 	if err := json.Unmarshal(grootOutput, &config); err != nil {
@@ -125,7 +125,6 @@ func Run(args []string, cmd cmd, conf conf) error {
 	//
 	// 	configFile.Sync()
 	//
-	fmt.Printf("%s\n", "winc run")
 	_, _, err = cmd.Run(wincBin, "run", "-b", bundleDir, containerId)
 	if err != nil {
 		return fmt.Errorf("winc run failed: %s", err)
@@ -135,7 +134,7 @@ func Run(args []string, cmd cmd, conf conf) error {
 	diffOutputFile := filepath.Join(os.TempDir(), fmt.Sprintf("diff-output%d", int32(time.Now().Unix())))
 	_, _, err = cmd.Run(diffExporterBin, "-outputFile", diffOutputFile, "-containerId", containerId, "-bundlePath", bundleDir)
 	if err != nil {
-		return fmt.Errorf("Running diff-exporter failed: %s", err)
+		return fmt.Errorf("diff-exporter failed: %s", err)
 	}
 	//
 	// 	fmt.Printf("%s\n", "Running hydrator")

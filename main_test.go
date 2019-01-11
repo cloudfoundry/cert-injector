@@ -15,22 +15,24 @@ var _ = Describe("cert-injector", func() {
 		fakeCmd    *fakes.Cmd
 		fakeConfig *fakes.Config
 
-		args []string
+		driverStore string
+		ociImageUri string
+		args        []string
 	)
 
 	BeforeEach(func() {
 		fakeCmd = fakes.NewCmd()
 		fakeConfig = fakes.NewConfig()
-
-		args = []string{"cert-injector.exe", "", "fakes/really-has-certs.crt", "first-image-uri"}
+		driverStore = "some-driver-store"
+		ociImageUri = "first-image-uri"
+		args = []string{"cert-injector.exe", driverStore, "fakes/really-has-certs.crt", ociImageUri}
 	})
 
-	It("calls hydrator to remove the custom layer", func() {
+	It("calls hydrator to remove any custom layers", func() {
 		err := Run(args, fakeCmd, fakeConfig)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(fakeCmd.RunCalls.CallCount("hydrate.exe")).NotTo(Equal(0))
-		Expect(fakeCmd.RunCalls.ReceivedArgs("hydrate.exe")).To(ContainElement("remove-layer"))
-		Expect(fakeCmd.RunCalls.ReceivedArgs("hydrate.exe")).To(ContainElement("first-image-uri"))
+		Expect(fakeCmd.RunCalls.ReceivedArgs("hydrate.exe")).To(ConsistOf("remove-layer", "-ociImage", ociImageUri))
 	})
 
 	Context("when hydrator fails to remove the custom layer", func() {
@@ -47,7 +49,7 @@ var _ = Describe("cert-injector", func() {
 	Describe("cert_file", func() {
 		Context("when the cert_file does not exist", func() {
 			BeforeEach(func() {
-				args = []string{"cert-injector.exe", "", "not-a-real-file.crt", "first-image-uri"}
+				args = []string{"cert-injector.exe", "", "not-a-real-file.crt", ""}
 			})
 
 			It("returns a helpful error", func() {
@@ -58,7 +60,7 @@ var _ = Describe("cert-injector", func() {
 
 		Context("when there are no trusted certs to inject", func() {
 			BeforeEach(func() {
-				args = []string{"cert-injector.exe", "", "fakes/empty.crt", "first-image-uri"}
+				args = []string{"cert-injector.exe", "", "fakes/empty.crt", ""}
 			})
 
 			It("does not check other arguments and exits successfully", func() {
@@ -89,8 +91,29 @@ var _ = Describe("cert-injector", func() {
 		})
 	})
 
-	Describe("winc is called", func() {
-		It("with the appropriate arguments", func() {
+	Describe("groot", func() {
+		It("creates a volume with the appropriate arguments", func() {
+			err := Run(args, fakeCmd, fakeConfig)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fakeCmd.RunCalls.CallCount("groot.exe")).To(Equal(1))
+
+			receivedArgs := fakeCmd.RunCalls.ReceivedArgs("groot.exe")
+			Expect(receivedArgs).To(ConsistOf("--driver-store", driverStore, "create", ociImageUri))
+		})
+
+		Context("when winc fails", func() {
+			BeforeEach(func() {
+				fakeCmd.RunCalls.Returns("groot.exe", nil, nil, errors.New("banana"))
+			})
+			It("returns a helpful error message", func() {
+				err := Run(args, fakeCmd, fakeConfig)
+				Expect(err).To(MatchError("groot create failed: banana"))
+			})
+		})
+	})
+
+	Describe("winc", func() {
+		It("creates a container with the appropriate arguments", func() {
 			err := Run(args, fakeCmd, fakeConfig)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeCmd.RunCalls.CallCount("winc.exe")).To(Equal(1))
@@ -110,9 +133,8 @@ var _ = Describe("cert-injector", func() {
 		})
 	})
 
-	Describe("diff-exporter is called", func() {
-		It("with the appropriate arguments", func() {
-			/* For the config.json to be valid, it should contain the script to import cert */
+	Describe("diff-exporter", func() {
+		It("exports the top layer with the appropriate arguments", func() {
 			err := Run(args, fakeCmd, fakeConfig)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeCmd.RunCalls.CallCount("diff-exporter.exe")).To(Equal(1))
@@ -127,21 +149,23 @@ var _ = Describe("cert-injector", func() {
 			})
 			It("returns a helpful error message", func() {
 				err := Run(args, fakeCmd, fakeConfig)
-				Expect(err).To(MatchError("Running diff-exporter failed: banana"))
+				Expect(err).To(MatchError("diff-exporter failed: banana"))
 			})
 		})
 	})
 
-	PIt("hydrator is called with add-layer command exactly once", func() {
-	})
+	Describe("hydrator", func() {
+		PIt("hydrator is called with add-layer command exactly once", func() {
+		})
 
-	Context("When the hydrator is called with add-layer command", func() {
-		PIt("It was called with a layer that contains the required certificate", func() {
+		Context("When the hydrator is called with add-layer command", func() {
+			PIt("It was called with a layer that contains the required certificate", func() {
+			})
 		})
 	})
 
-	Context("when called with incorrect arguments", func() {
-		It("returns a helpful error message with usage", func() {
+	Context("when cert-injector is called with incorrect arguments", func() {
+		It("prints the usage", func() {
 			err := Run([]string{"cert-injector.exe"}, fakeCmd, fakeConfig)
 			Expect(err).To(MatchError(fmt.Sprintf("usage: %s <driver_store> <cert_file> <image_uri>...\n", args[0])))
 		})
