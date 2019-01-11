@@ -1,6 +1,7 @@
 package command
 
 import (
+	"bytes"
 	"os/exec"
 )
 
@@ -11,6 +12,14 @@ func NewCmd() *Cmd {
 	return &Cmd{}
 }
 
-func (c *Cmd) Run(executable string, args ...string) error {
-	return exec.Command(executable, args...).Run()
+func (c *Cmd) Run(executable string, args ...string) ([]byte, []byte, error) {
+	var command *exec.Cmd
+	var outbuff, errbuff bytes.Buffer
+	var err error
+
+	command = exec.Command(executable, args...)
+	command.Stdout = &outbuff
+	command.Stderr = &errbuff
+	err = command.Run()
+	return outbuff.Bytes(), errbuff.Bytes(), err
 }

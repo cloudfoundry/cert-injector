@@ -35,7 +35,7 @@ var _ = Describe("cert-injector", func() {
 
 	Context("when hydrator fails to remove the custom layer", func() {
 		BeforeEach(func() {
-			fakeCmd.RunCalls.Returns("hydrate.exe", errors.New("hydrator is unhappy"))
+			fakeCmd.RunCalls.Returns("hydrate.exe", nil, nil, errors.New("hydrator is unhappy"))
 		})
 
 		It("should return a helpful error", func() {
@@ -89,21 +89,54 @@ var _ = Describe("cert-injector", func() {
 		})
 	})
 
+	Describe("winc is called", func() {
+		It("with the appropriate arguments", func() {
+			err := Run(args, fakeCmd, fakeConfig)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(fakeCmd.RunCalls.CallCount("winc.exe")).To(Equal(1))
+
+			receivedArgs := fakeCmd.RunCalls.ReceivedArgs("winc.exe")
+			Expect(receivedArgs).To(ConsistOf("run", "-b", ContainSubstring("layer"), ContainSubstring("layer")))
+		})
+
+		Context("when winc fails", func() {
+			BeforeEach(func() {
+				fakeCmd.RunCalls.Returns("winc.exe", nil, nil, errors.New("banana"))
+			})
+			It("returns a helpful error message", func() {
+				err := Run(args, fakeCmd, fakeConfig)
+				Expect(err).To(MatchError("winc run failed: banana"))
+			})
+		})
+	})
+
 	Describe("diff-exporter is called", func() {
-		It("with -bundlePath containing a valid config.json", func() {
+		It("with the appropriate arguments", func() {
 			/* For the config.json to be valid, it should contain the script to import cert */
 			err := Run(args, fakeCmd, fakeConfig)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(fakeCmd.RunCalls.CallCount("diff-exporter.exe")).To(Equal(1))
-			Fail("TODO: INCOMPLETE")
+
+			receivedArgs := fakeCmd.RunCalls.ReceivedArgs("diff-exporter.exe")
+			Expect(receivedArgs).To(ConsistOf("-outputFile", ContainSubstring("diff-output"), "-containerId", ContainSubstring("layer"), "-bundlePath", ContainSubstring("layer")))
+		})
+
+		Context("when diff-exporter fails", func() {
+			BeforeEach(func() {
+				fakeCmd.RunCalls.Returns("diff-exporter.exe", nil, nil, errors.New("banana"))
+			})
+			It("returns a helpful error message", func() {
+				err := Run(args, fakeCmd, fakeConfig)
+				Expect(err).To(MatchError("Running diff-exporter failed: banana"))
+			})
 		})
 	})
 
-	It("hydrator is called with add-layer command exactly once", func() {
+	PIt("hydrator is called with add-layer command exactly once", func() {
 	})
 
 	Context("When the hydrator is called with add-layer command", func() {
-		It("It was called with a layer that contains the required certificate", func() {
+		PIt("It was called with a layer that contains the required certificate", func() {
 		})
 	})
 

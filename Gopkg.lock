@@ -3,11 +3,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:fab98806282b5b081ad181a27810ead0df6e40b5eb37bbc451f981e141508909"
-  name = "github.com/cloudfoundry/hydrator"
-  packages = ["oci-directory"]
+  digest = "1:21142b5c90ed5f204231a5518364039bbb33f94352789f40ee3571401fe75c9c"
+  name = "code.cloudfoundry.org/filelock"
+  packages = ["."]
   pruneopts = "NUT"
-  revision = "122ceb480c560700eff5bb0e95f9deab51be706d"
+  revision = "13cd4136463908a96faf1876aa0d9ada358f0b41"
+
+[[projects]]
+  branch = "master"
+  digest = "1:942cab75b95b021eb4a9ef50a578a4fd52e7e366d66dbf245c5b229637f67659"
+  name = "github.com/cloudfoundry/cert-injector"
+  packages = ["container"]
+  pruneopts = "NUT"
+  revision = "1c022ee676687d80b8634161700e4f36a37c41cf"
 
 [[projects]]
   digest = "1:41933d387bfa3eaa6a82647914ed7044f7b8355764c24fb920892bc8c03ef0c3"
@@ -111,9 +119,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ca6c6c91837d9d0349d94e79e801c7db3462ba82acecbe5457cbbeca56d8b197"
+  digest = "1:07aaaa686ca4f19afc6a85c83991253218d1582fb536078ae2fcde1df0d0ec91"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "unix",
+    "windows",
+  ]
   pruneopts = "NUT"
   revision = "82a175fd1598e8a172e58ebdf5ed262bb29129e5"
 
@@ -172,7 +183,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/cloudfoundry/hydrator/oci-directory",
+    "code.cloudfoundry.org/filelock",
+    "github.com/cloudfoundry/cert-injector/container",
     "github.com/onsi/ginkgo",
     "github.com/onsi/ginkgo/ginkgo",
     "github.com/onsi/gomega",
