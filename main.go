@@ -26,7 +26,7 @@ type cmd interface {
 }
 
 type conf interface {
-	Write(certData []byte) error
+	Write(bundleDir string, certData []byte) error
 }
 
 func Run(args []string, cmd cmd, conf conf) error {
@@ -50,11 +50,6 @@ func Run(args []string, cmd cmd, conf conf) error {
 		if err != nil {
 			return fmt.Errorf("hydrate.exe remove-layer failed: %s\n", err)
 		}
-	}
-
-	err = conf.Write(certData)
-	if err != nil {
-		return fmt.Errorf("Write container config failed: %s", err)
 	}
 
 	grootDriverStore := args[1]
@@ -86,45 +81,35 @@ func Run(args []string, cmd cmd, conf conf) error {
 	// }
 	// fmt.Printf("%s\n", "Begin exporting layer")
 	// for _, uri := range ociImageUris {
-	containerId := fmt.Sprintf("layer%d", int32(time.Now().Unix()))
 	//
-	var grootOutput []byte
-	grootOutput, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", ociImageUris[0])
+	// var grootOutput []byte
+	_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", ociImageUris[0])
 	if err != nil {
 		return fmt.Errorf("groot create failed: %s", err)
 	}
-	_ = grootOutput
 	//
 	// 	var config map[string]interface{}
 	// 	if err := json.Unmarshal(grootOutput, &config); err != nil {
 	// 		return fmt.Errorf("failed to parse process spec\n")
 	// 	}
 	//
-	// 	fmt.Printf("Writing config.json")
+
+	containerId := fmt.Sprintf("layer-%d", int32(time.Now().Unix()))
 	bundleDir := filepath.Join(os.TempDir(), containerId)
-	// 	configPath := filepath.Join(bundleDir, "config.json")
-	// 	if err = os.Mkdir(bundleDir, 0755); err != nil {
-	// 		return fmt.Errorf("Failed to create bundle directory\n")
-	// 	}
+	if err = os.Mkdir(bundleDir, 0755); err != nil {
+		return fmt.Errorf("Failed to create bundle directory: %s\n", err)
+	}
+
+	err = conf.Write(bundleDir, certData)
+	if err != nil {
+		return fmt.Errorf("Write container config failed: %s", err)
+	}
+
 	//
 	// 	//TODO: merge the config.json previously created, with the output of groot and write it out as config.json
-	// 	configBytes, err := json.Marshal(config)
-	// 	if err != nil {
-	// 		return fmt.Errorf("Failed to write config.json\n")
-	// 	}
-	// 	configFile, err := os.Create(configPath)
-	// 	if err != nil {
-	// 		return fmt.Errorf("Failed to create config.json\n")
-	// 	}
-	// 	defer configFile.Close()
-	//
-	// 	_, err = configFile.Write(configBytes)
-	// 	if err != nil {
-	// 		return fmt.Errorf("Failed to write config.json\n")
-	// 	}
-	//
 	// 	configFile.Sync()
 	//
+
 	_, _, err = cmd.Run(wincBin, "run", "-b", bundleDir, containerId)
 	if err != nil {
 		return fmt.Errorf("winc run failed: %s", err)
@@ -153,6 +138,11 @@ func Run(args []string, cmd cmd, conf conf) error {
 	// 		return fmt.Errorf("diff output file deletion failed\n")
 	// 	}
 	// }
+
+	if err = os.Mkdir(bundleDir, 0755); err != nil {
+		return fmt.Errorf("Failed to create bundle directory: %s\n", err)
+	}
+
 	return nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 )
 
 const ImportCertificatePs = `
@@ -36,7 +37,7 @@ func NewConfig() Config {
 // to a file and import the certificate. It appends
 // this script as a process to a config.json that will
 // be run on the container.
-func (c Config) Write(certData []byte) error {
+func (c Config) Write(bundleDir string, certData []byte) error {
 	command := fmt.Sprintf(ImportCertificatePs, string(certData))
 
 	encodedCommand := base64.StdEncoding.EncodeToString([]byte(command))
@@ -50,10 +51,10 @@ func (c Config) Write(certData []byte) error {
 
 	marshalledConfig, err := json.Marshal(config)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("JSON marshal config failed: %s", err)
 	}
 
-	err = ioutil.WriteFile("config.json", marshalledConfig, 0644)
+	err = ioutil.WriteFile(filepath.Join(bundleDir, "config.json"), marshalledConfig, 0644)
 	if err != nil {
 		return fmt.Errorf("Write config.json failed: %s", err)
 	}

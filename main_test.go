@@ -3,6 +3,7 @@ package main_test
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	. "code.cloudfoundry.org/cert-injector"
 	"code.cloudfoundry.org/cert-injector/fakes"
@@ -70,13 +71,18 @@ var _ = Describe("cert-injector", func() {
 		})
 	})
 
-	Describe("config.json", func() {
-		It("creates a config for the container", func() {
+	Describe("bundle directory and config", func() {
+		It("creates a directory and config for the container", func() {
 			err := Run(args, fakeCmd, fakeConfig)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeConfig.WriteCall.CallCount).To(Equal(1))
+			bundleDir := fakeConfig.WriteCall.Receives.BundleDir
+			Expect(bundleDir).To(ContainSubstring("layer"))
 			Expect(string(fakeConfig.WriteCall.Receives.CertData)).To(ContainSubstring("this-is-a-cert"))
+
+			_, err = os.Stat(bundleDir)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when it fails to create a config", func() {

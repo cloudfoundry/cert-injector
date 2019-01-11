@@ -5,27 +5,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
-	"github.com/cloudfoundry/cert-injector/container"
+	"code.cloudfoundry.org/cert-injector/container"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Config", func() {
 	var (
-		conf     container.Config
-		certData []byte
+		bundleDir string
+		certData  []byte
+
+		conf container.Config
 	)
 	BeforeEach(func() {
-		conf = container.NewConfig()
+		bundleDir = os.TempDir()
 		certData = []byte("really-a-cert")
+
+		conf = container.NewConfig()
 	})
 
 	It("encodes a script to import the certificates and writes it to config.json", func() {
-		err := conf.Write(certData)
+		err := conf.Write(bundleDir, certData)
 		Expect(err).NotTo(HaveOccurred())
 
-		data, err := ioutil.ReadFile("config.json")
+		data, err := ioutil.ReadFile(filepath.Join(bundleDir, "config.json"))
 		Expect(err).NotTo(HaveOccurred())
 
 		cont := container.ConfigJSON{}
