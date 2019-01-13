@@ -86,6 +86,12 @@
   version = "v1.0.1"
 
 [[projects]]
+  name = "github.com/opencontainers/runtime-spec"
+  packages = ["specs-go"]
+  revision = "4e3b9264a330d094b0386c3703c5f379119711e8"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = [
@@ -150,6 +156,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ab6600dba820089c3548dbc37725a06d918e76c09bcec8b8336f724b8865a5c3"
+  inputs-digest = "0e78caf8477fc28f50d80b3f35bfbe1411246721590afad1cf1819360a5c6d05"
   solver-name = "gps-cdcl"
   solver-version = 1

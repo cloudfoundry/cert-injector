@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+
+	oci "github.com/opencontainers/runtime-spec/specs-go"
 )
 
 const ImportCertificatePs = `
@@ -20,15 +22,6 @@ Remove-Item $certFile
 
 type Config struct{}
 
-type ConfigJSON struct {
-	Process process `json:"process"`
-}
-
-type process struct {
-	Args []string `json:"args"`
-	Cwd  string   `json:"cwd"`
-}
-
 func NewConfig() Config {
 	return Config{}
 }
@@ -42,8 +35,8 @@ func (c Config) Write(bundleDir string, certData []byte) error {
 
 	encodedCommand := base64.StdEncoding.EncodeToString([]byte(command))
 
-	config := ConfigJSON{
-		Process: process{
+	config := oci.Spec{
+		Process: &oci.Process{
 			Args: []string{"powershell.exe", "-EncodedCommand", encodedCommand},
 			Cwd:  `C:\`,
 		},
