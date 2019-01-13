@@ -3,22 +3,33 @@ package fakes
 type Config struct {
 	WriteCall struct {
 		CallCount int
-		Receives  struct {
-			BundleDir   string
-			GrootOutput []byte
-			CertData    []byte
-		}
-		Returns struct {
-			Error error
-		}
+		Receives  []WriteCallReceive
+		Returns   []WriteCallReturn
 	}
+}
+
+type WriteCallReceive struct {
+	BundleDir   string
+	GrootOutput []byte
+	CertData    []byte
+}
+
+type WriteCallReturn struct {
+	Error error
 }
 
 func (c *Config) Write(bundleDir string, grootOutput []byte, certData []byte) error {
 	c.WriteCall.CallCount++
-	c.WriteCall.Receives.BundleDir = bundleDir
-	c.WriteCall.Receives.GrootOutput = grootOutput
-	c.WriteCall.Receives.CertData = certData
 
-	return c.WriteCall.Returns.Error
+	c.WriteCall.Receives = append(c.WriteCall.Receives, WriteCallReceive{
+		BundleDir:   bundleDir,
+		GrootOutput: grootOutput,
+		CertData:    certData,
+	})
+
+	if len(c.WriteCall.Returns) < c.WriteCall.CallCount {
+		return nil
+	}
+
+	return c.WriteCall.Returns[c.WriteCall.CallCount-1].Error
 }

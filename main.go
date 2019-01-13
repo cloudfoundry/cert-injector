@@ -45,10 +45,11 @@ func Run(args []string, cmd cmd, conf conf) error {
 	}
 
 	ociImageUris := args[3:]
-	for _, ociImageUri := range ociImageUris {
-		_, _, err = cmd.Run(hydrateBin, "remove-layer", "-ociImage", ociImageUri)
+
+	for _, uri := range ociImageUris {
+		_, _, err = cmd.Run(hydrateBin, "remove-layer", "-ociImage", uri)
 		if err != nil {
-			return fmt.Errorf("hydrate.exe remove-layer failed: %s\n", err)
+			return fmt.Errorf("hydrate.exe remove-layer -ociImage %s failed: %s\n", uri, err)
 		}
 	}
 
@@ -79,53 +80,53 @@ func Run(args []string, cmd cmd, conf conf) error {
 	// 		return fmt.Errorf("groot delete failed: %s", err)
 	// 	}
 	// }
-	// fmt.Printf("%s\n", "Begin exporting layer")
-	// for _, uri := range ociImageUris {
-	//
-	grootOutput, _, err := cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", ociImageUris[0])
-	if err != nil {
-		return fmt.Errorf("groot create failed: %s", err)
-	}
 
-	containerId := fmt.Sprintf("layer-%d", int32(time.Now().Unix()))
-	bundleDir := filepath.Join(os.TempDir(), containerId)
-	err = os.MkdirAll(bundleDir, 0755)
-	if err != nil {
-		return fmt.Errorf("Failed to create bundle directory: %s\n", err)
-	}
+	for _, uri := range ociImageUris {
+		grootOutput, _, err := cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri)
+		if err != nil {
+			return fmt.Errorf("groot create failed: %s", err)
+		}
 
-	err = conf.Write(bundleDir, grootOutput, certData)
-	if err != nil {
-		return fmt.Errorf("Write container config failed: %s", err)
-	}
+		containerId := fmt.Sprintf("layer-%d", int32(time.Now().Unix()))
+		bundleDir := filepath.Join(os.TempDir(), containerId)
+		err = os.MkdirAll(bundleDir, 0755)
+		if err != nil {
+			return fmt.Errorf("Failed to create bundle directory: %s\n", err)
+		}
 
-	// TODO: merge the config.json previously created, with the output of groot and write it out as config.json
-	// 	configFile.Sync()
+		err = conf.Write(bundleDir, grootOutput, certData)
+		if err != nil {
+			return fmt.Errorf("Write container config failed: %s", err)
+		}
 
-	_, _, err = cmd.Run(wincBin, "run", "-b", bundleDir, containerId)
-	if err != nil {
-		return fmt.Errorf("winc run failed: %s", err)
-	}
+		// TODO: merge the config.json previously created, with the output of groot and write it out as config.json
+		// 	configFile.Sync()
 
-	diffOutputFile := filepath.Join(os.TempDir(), fmt.Sprintf("diff-output%d", int32(time.Now().Unix())))
-	_, _, err = cmd.Run(diffExporterBin, "-outputFile", diffOutputFile, "-containerId", containerId, "-bundlePath", bundleDir)
-	if err != nil {
-		return fmt.Errorf("diff-exporter failed: %s", err)
-	}
+		_, _, err = cmd.Run(wincBin, "run", "-b", bundleDir, containerId)
+		if err != nil {
+			return fmt.Errorf("winc run failed: %s", err)
+		}
 
-	_, _, err = cmd.Run(hydrateBin, "add-layer", "-ociImage", ociImageUris[0], "-layer", diffOutputFile)
-	if err != nil {
-		return fmt.Errorf("hydrate add-layer failed: %s", err)
-	}
+		diffOutputFile := filepath.Join(os.TempDir(), fmt.Sprintf("diff-output%d", int32(time.Now().Unix())))
+		_, _, err = cmd.Run(diffExporterBin, "-outputFile", diffOutputFile, "-containerId", containerId, "-bundlePath", bundleDir)
+		if err != nil {
+			return fmt.Errorf("diff-exporter failed: %s", err)
+		}
 
-	_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", ociImageUris[0])
-	if err != nil {
-		return fmt.Errorf("groot delete failed: %s", err)
-	}
+		_, _, err = cmd.Run(hydrateBin, "add-layer", "-ociImage", uri, "-layer", diffOutputFile)
+		if err != nil {
+			return fmt.Errorf("hydrate add-layer failed: %s", err)
+		}
 
-	err = os.RemoveAll(bundleDir)
-	if err != nil {
-		return fmt.Errorf("remove bundle directory failed: %s", err)
+		_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", uri)
+		if err != nil {
+			return fmt.Errorf("groot delete failed: %s", err)
+		}
+
+		err = os.RemoveAll(bundleDir)
+		if err != nil {
+			return fmt.Errorf("remove bundle directory failed: %s", err)
+		}
 	}
 
 	return nil

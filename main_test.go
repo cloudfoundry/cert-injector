@@ -30,8 +30,10 @@ var _ = Describe("cert-injector", func() {
 		grootOutput = []byte("gibberish")
 		args = []string{"cert-injector.exe", driverStore, "fakes/really-has-certs.crt", ociImageUri}
 
-		fakeCmd.RunCall.Returns = make([]fakes.RunCallReturn, 6)
+		fakeCmd.RunCall.Returns = make([]fakes.RunCallReturn, 20)
 		fakeCmd.RunCall.Returns[1].Stdout = grootOutput
+
+		fakeConfig.WriteCall.Returns = make([]fakes.WriteCallReturn, 2)
 	})
 
 	It("replaces custom layers with a new layer with new certificates", func() {
@@ -48,9 +50,9 @@ var _ = Describe("cert-injector", func() {
 
 		By("creating a bundle directory and container config")
 		Expect(fakeConfig.WriteCall.CallCount).To(Equal(1))
-		Expect(fakeConfig.WriteCall.Receives.BundleDir).To(ContainSubstring("layer"))
-		Expect(fakeConfig.WriteCall.Receives.GrootOutput).To(Equal(grootOutput))
-		Expect(string(fakeConfig.WriteCall.Receives.CertData)).To(ContainSubstring("this-is-a-cert"))
+		Expect(fakeConfig.WriteCall.Receives[0].BundleDir).To(ContainSubstring("layer"))
+		Expect(fakeConfig.WriteCall.Receives[0].GrootOutput).To(Equal(grootOutput))
+		Expect(string(fakeConfig.WriteCall.Receives[0].CertData)).To(ContainSubstring("this-is-a-cert"))
 
 		By("calling winc to create a container")
 		Expect(fakeCmd.RunCall.Receives[2].Executable).To(ContainSubstring("winc.exe"))
@@ -69,7 +71,54 @@ var _ = Describe("cert-injector", func() {
 		Expect(fakeCmd.RunCall.Receives[5].Args).To(ConsistOf("--driver-store", driverStore, "delete", ociImageUri))
 
 		By("checking bundle dir is gone")
-		Expect(fakeConfig.WriteCall.Receives.BundleDir).NotTo(BeAnExistingFile())
+		Expect(fakeConfig.WriteCall.Receives[0].BundleDir).NotTo(BeAnExistingFile())
+	})
+
+	Context("when there are multiple oci image uris", func() {
+		var ociImageUri2 string
+		BeforeEach(func() {
+			ociImageUri2 = "the-other-image-uri"
+			args = append(args, ociImageUri2)
+
+			fakeCmd.RunCall.Returns[7].Stdout = grootOutput
+		})
+
+		It("does the loop for each one", func() {
+			err := Run(args, fakeCmd, fakeConfig)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("calling hydrator to remove the old layer twice")
+			Expect(fakeCmd.RunCall.Receives[1].Executable).To(ContainSubstring("hydrate.exe"))
+			Expect(fakeCmd.RunCall.Receives[1].Args).To(ConsistOf("remove-layer", "-ociImage", ociImageUri2))
+
+			By("calling groot to create a volume twice")
+			Expect(fakeCmd.RunCall.Receives[7].Executable).To(ContainSubstring("groot.exe"))
+			Expect(fakeCmd.RunCall.Receives[7].Args).To(ConsistOf("--driver-store", driverStore, "create", ociImageUri2))
+
+			By("creating a bundle directory and container config twice")
+			Expect(fakeConfig.WriteCall.Receives[1].BundleDir).To(ContainSubstring("layer"))
+			Expect(fakeConfig.WriteCall.Receives[1].GrootOutput).To(Equal(grootOutput))
+			Expect(string(fakeConfig.WriteCall.Receives[1].CertData)).To(ContainSubstring("this-is-a-cert"))
+
+			By("calling winc to create a container twice")
+			Expect(fakeCmd.RunCall.Receives[8].Executable).To(ContainSubstring("winc.exe"))
+			Expect(fakeCmd.RunCall.Receives[8].Args).To(ConsistOf("run", "-b", ContainSubstring("layer"), ContainSubstring("layer")))
+
+			By("calling diff-exporter to export the top layer twice")
+			Expect(fakeCmd.RunCall.Receives[9].Executable).To(ContainSubstring("diff-exporter.exe"))
+			Expect(fakeCmd.RunCall.Receives[9].Args).To(ConsistOf("-outputFile", ContainSubstring("diff-output"), "-containerId", ContainSubstring("layer"), "-bundlePath", ContainSubstring("layer")))
+
+			By("calling hydrator to add the new layer twice")
+			Expect(fakeCmd.RunCall.Receives[10].Executable).To(ContainSubstring("hydrate.exe"))
+			Expect(fakeCmd.RunCall.Receives[10].Args).To(ConsistOf("add-layer", "-ociImage", ociImageUri2, "-layer", ContainSubstring("diff-output")))
+
+			By("calling groot to delete the volume twice")
+			Expect(fakeCmd.RunCall.Receives[11].Executable).To(ContainSubstring("groot.exe"))
+			Expect(fakeCmd.RunCall.Receives[11].Args).To(ConsistOf("--driver-store", driverStore, "delete", ociImageUri2))
+
+			By("checking bundle dir is gone")
+			Expect(fakeConfig.WriteCall.Receives[1].BundleDir).NotTo(BeAnExistingFile())
+		})
 	})
 
 	Describe("error cases", func() {
@@ -109,7 +158,7 @@ var _ = Describe("cert-injector", func() {
 
 			It("should return a helpful error", func() {
 				err := Run(args, fakeCmd, fakeConfig)
-				Expect(err).To(MatchError("hydrate.exe remove-layer failed: hydrator is unhappy\n"))
+				Expect(err).To(MatchError("hydrate.exe remove-layer -ociImage first-image-uri failed: hydrator is unhappy\n"))
 			})
 		})
 
@@ -125,7 +174,7 @@ var _ = Describe("cert-injector", func() {
 
 		Context("when config write fails", func() {
 			BeforeEach(func() {
-				fakeConfig.WriteCall.Returns.Error = errors.New("banana")
+				fakeConfig.WriteCall.Returns[0].Error = errors.New("banana")
 			})
 
 			It("returns a helpful error message", func() {

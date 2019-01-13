@@ -21,6 +21,7 @@ type RunCallReturn struct {
 
 func (c *Cmd) Run(executable string, args ...string) ([]byte, []byte, error) {
 	c.RunCall.CallCount++
+
 	c.RunCall.Receives = append(c.RunCall.Receives, RunCallReceive{
 		Executable: executable,
 		Args:       args,
