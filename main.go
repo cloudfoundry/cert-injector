@@ -26,7 +26,7 @@ type cmd interface {
 }
 
 type conf interface {
-	Write(bundleDir string, certData []byte) error
+	Write(bundleDir string, grootOutput []byte, certData []byte) error
 }
 
 func Run(args []string, cmd cmd, conf conf) error {
@@ -82,17 +82,10 @@ func Run(args []string, cmd cmd, conf conf) error {
 	// fmt.Printf("%s\n", "Begin exporting layer")
 	// for _, uri := range ociImageUris {
 	//
-	// var grootOutput []byte
-	_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", ociImageUris[0])
+	grootOutput, _, err := cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", ociImageUris[0])
 	if err != nil {
 		return fmt.Errorf("groot create failed: %s", err)
 	}
-	//
-	// 	var config map[string]interface{}
-	// 	if err := json.Unmarshal(grootOutput, &config); err != nil {
-	// 		return fmt.Errorf("failed to parse process spec\n")
-	// 	}
-	//
 
 	containerId := fmt.Sprintf("layer-%d", int32(time.Now().Unix()))
 	bundleDir := filepath.Join(os.TempDir(), containerId)
@@ -101,7 +94,7 @@ func Run(args []string, cmd cmd, conf conf) error {
 		return fmt.Errorf("Failed to create bundle directory: %s\n", err)
 	}
 
-	err = conf.Write(bundleDir, certData)
+	err = conf.Write(bundleDir, grootOutput, certData)
 	if err != nil {
 		return fmt.Errorf("Write container config failed: %s", err)
 	}

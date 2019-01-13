@@ -16,15 +16,17 @@ import (
 
 var _ = Describe("Config", func() {
 	var (
-		bundleDir string
-		certData  []byte
-		path      string
+		bundleDir   string
+		certData    []byte
+		grootOutput []byte
+		path        string
 
 		conf container.Config
 	)
 	BeforeEach(func() {
 		bundleDir = os.TempDir()
 		certData = []byte("really-a-cert")
+		grootOutput = []byte(`{"ociVersion": "2.2.2"}`)
 		path = filepath.Join(bundleDir, "config.json")
 
 		conf = container.NewConfig()
@@ -35,7 +37,7 @@ var _ = Describe("Config", func() {
 	})
 
 	It("encodes a script to import the certificates and writes it to config.json", func() {
-		err := conf.Write(bundleDir, certData)
+		err := conf.Write(bundleDir, grootOutput, certData)
 		Expect(err).NotTo(HaveOccurred())
 
 		data, err := ioutil.ReadFile(path)
@@ -43,6 +45,7 @@ var _ = Describe("Config", func() {
 
 		cont := oci.Spec{}
 		json.Unmarshal(data, &cont)
+		Expect(cont.Version).To(Equal("2.2.2"))
 		Expect(cont.Process.Cwd).To(Equal("C:\\"))
 
 		decoded, err := base64.StdEncoding.DecodeString(cont.Process.Args[2])

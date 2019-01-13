@@ -26,20 +26,25 @@ func NewConfig() Config {
 	return Config{}
 }
 
-// Creates a powershell script to write the certs
-// to a file and import the certificate. It appends
-// this script as a process to a config.json that will
-// be run on the container.
-func (c Config) Write(bundleDir string, certData []byte) error {
+// Write creates a file that contains the output
+// of groot and a powershell script that will import
+// the user-provided certificates to be run on the
+// container.
+func (c Config) Write(bundleDir string, grootOutput []byte, certData []byte) error {
+	config := oci.Spec{}
+
+	err := json.Unmarshal(grootOutput, &config)
+	if err != nil {
+		panic(err)
+	}
+
 	command := fmt.Sprintf(ImportCertificatePs, string(certData))
 
 	encodedCommand := base64.StdEncoding.EncodeToString([]byte(command))
 
-	config := oci.Spec{
-		Process: &oci.Process{
-			Args: []string{"powershell.exe", "-EncodedCommand", encodedCommand},
-			Cwd:  `C:\`,
-		},
+	config.Process = &oci.Process{
+		Args: []string{"powershell.exe", "-EncodedCommand", encodedCommand},
+		Cwd:  `C:\`,
 	}
 
 	marshalledConfig, err := json.Marshal(config)

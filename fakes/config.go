@@ -4,8 +4,9 @@ type Config struct {
 	WriteCall struct {
 		CallCount int
 		Receives  struct {
-			BundleDir string
-			CertData  []byte
+			BundleDir   string
+			GrootOutput []byte
+			CertData    []byte
 		}
 		Returns struct {
 			Error error
@@ -17,9 +18,10 @@ func NewConfig() *Config {
 	return &Config{}
 }
 
-func (c *Config) Write(bundleDir string, certData []byte) error {
+func (c *Config) Write(bundleDir string, grootOutput []byte, certData []byte) error {
 	c.WriteCall.CallCount++
 	c.WriteCall.Receives.BundleDir = bundleDir
+	c.WriteCall.Receives.GrootOutput = grootOutput
 	c.WriteCall.Receives.CertData = certData
 
 	return c.WriteCall.Returns.Error

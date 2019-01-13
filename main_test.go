@@ -81,13 +81,23 @@ var _ = Describe("cert-injector", func() {
 	})
 
 	Describe("bundle directory and config", func() {
+		var grootOutput []byte
+		BeforeEach(func() {
+			grootOutput = []byte("gibberish")
+			fakeCmd.RunCalls.Returns("groot.exe", grootOutput, nil, nil)
+		})
+
 		It("creates a temp directory to write the container cnonfig", func() {
 			err := Run(args, fakeCmd, fakeConfig)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeConfig.WriteCall.CallCount).To(Equal(1))
+
 			bundleDir := fakeConfig.WriteCall.Receives.BundleDir
 			Expect(bundleDir).To(ContainSubstring("layer"))
+
+			Expect(fakeConfig.WriteCall.Receives.GrootOutput).To(Equal(grootOutput))
+
 			Expect(string(fakeConfig.WriteCall.Receives.CertData)).To(ContainSubstring("this-is-a-cert"))
 
 			By("deleting the bundle directory at the end")
@@ -117,7 +127,7 @@ var _ = Describe("cert-injector", func() {
 			Expect(receivedArgs).To(ConsistOf("--driver-store", driverStore, "create", ociImageUri))
 		})
 
-		Context("when winc fails", func() {
+		Context("when groot fails", func() {
 			BeforeEach(func() {
 				fakeCmd.RunCalls.Returns("groot.exe", nil, nil, errors.New("banana"))
 			})
@@ -174,10 +184,9 @@ var _ = Describe("cert-injector", func() {
 		PIt("hydrator is called with add-layer command exactly once", func() {
 		})
 
-		Context("When the hydrator is called with add-layer command", func() {
-			PIt("It was called with a layer that contains the required certificate", func() {
+		Context("when the hydrator is called with add-layer command", func() {
+			PIt("it was called with a layer that contains the required certificate", func() {
 			})
 		})
 	})
-
 })
