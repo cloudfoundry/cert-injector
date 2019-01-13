@@ -122,14 +122,10 @@ func Run(args []string, cmd cmd, conf conf) error {
 	if err != nil {
 		return fmt.Errorf("groot delete failed: %s", err)
 	}
-	// 	err = os.RemoveAll(diffOutputFile)
-	// 	if err != nil {
-	// 		return fmt.Errorf("diff output file deletion failed\n")
-	// 	}
-	// }
+
 	err = os.RemoveAll(bundleDir)
 	if err != nil {
-		return fmt.Errorf("Failed to delete bundle directory: %s", err)
+		return fmt.Errorf("remove bundle directory failed: %s", err)
 	}
 
 	return nil

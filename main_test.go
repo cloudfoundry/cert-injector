@@ -67,6 +67,9 @@ var _ = Describe("cert-injector", func() {
 		By("calling groot to delete the volume")
 		Expect(fakeCmd.RunCall.Receives[5].Executable).To(ContainSubstring("groot.exe"))
 		Expect(fakeCmd.RunCall.Receives[5].Args).To(ConsistOf("--driver-store", driverStore, "delete", ociImageUri))
+
+		By("checking bundle dir is gone")
+		Expect(fakeConfig.WriteCall.Receives.BundleDir).NotTo(BeAnExistingFile())
 	})
 
 	Describe("error cases", func() {
