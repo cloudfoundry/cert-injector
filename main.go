@@ -96,7 +96,8 @@ func Run(args []string, cmd cmd, conf conf) error {
 
 	containerId := fmt.Sprintf("layer-%d", int32(time.Now().Unix()))
 	bundleDir := filepath.Join(os.TempDir(), containerId)
-	if err = os.Mkdir(bundleDir, 0755); err != nil {
+	err = os.MkdirAll(bundleDir, 0755)
+	if err != nil {
 		return fmt.Errorf("Failed to create bundle directory: %s\n", err)
 	}
 
@@ -138,9 +139,9 @@ func Run(args []string, cmd cmd, conf conf) error {
 	// 		return fmt.Errorf("diff output file deletion failed\n")
 	// 	}
 	// }
-
-	if err = os.Mkdir(bundleDir, 0755); err != nil {
-		return fmt.Errorf("Failed to create bundle directory: %s\n", err)
+	err = os.RemoveAll(bundleDir)
+	if err != nil {
+		return fmt.Errorf("Failed to delete bundle directory: %s", err)
 	}
 
 	return nil
