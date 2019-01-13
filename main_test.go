@@ -38,7 +38,7 @@ var _ = Describe("cert-injector", func() {
 		err := Run(args, fakeCmd, fakeConfig)
 		Expect(err).NotTo(HaveOccurred())
 
-		By("calling hydrator to remove the current custom layers")
+		By("calling hydrator to remove the old layer")
 		Expect(fakeCmd.RunCall.Receives[0].Executable).To(ContainSubstring("hydrate.exe"))
 		Expect(fakeCmd.RunCall.Receives[0].Args).To(ConsistOf("remove-layer", "-ociImage", ociImageUri))
 
@@ -59,6 +59,10 @@ var _ = Describe("cert-injector", func() {
 		By("calling diff-exporter to export the top layer")
 		Expect(fakeCmd.RunCall.Receives[3].Executable).To(ContainSubstring("diff-exporter.exe"))
 		Expect(fakeCmd.RunCall.Receives[3].Args).To(ConsistOf("-outputFile", ContainSubstring("diff-output"), "-containerId", ContainSubstring("layer"), "-bundlePath", ContainSubstring("layer")))
+
+		By("calling hydrator to add the new layer")
+		Expect(fakeCmd.RunCall.Receives[4].Executable).To(ContainSubstring("hydrate.exe"))
+		Expect(fakeCmd.RunCall.Receives[4].Args).To(ConsistOf("add-layer", "-ociImage", ociImageUri, "-layer", ContainSubstring("diff-output")))
 	})
 
 	Describe("error cases", func() {
@@ -141,6 +145,17 @@ var _ = Describe("cert-injector", func() {
 			It("returns a helpful error message", func() {
 				err := Run(args, fakeCmd, fakeConfig)
 				Expect(err).To(MatchError("diff-exporter failed: diff-exporter is unhappy"))
+			})
+		})
+
+		Context("when hydrator fails to add the new layer", func() {
+			BeforeEach(func() {
+				fakeCmd.RunCall.Returns[4].Error = errors.New("hydrate add-layer is unhappy")
+			})
+
+			It("should return a helpful error", func() {
+				err := Run(args, fakeCmd, fakeConfig)
+				Expect(err).To(MatchError("hydrate add-layer failed: hydrate add-layer is unhappy"))
 			})
 		})
 	})

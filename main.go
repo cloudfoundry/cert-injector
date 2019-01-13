@@ -107,18 +107,16 @@ func Run(args []string, cmd cmd, conf conf) error {
 		return fmt.Errorf("winc run failed: %s", err)
 	}
 
-	// Running diff-exporter
 	diffOutputFile := filepath.Join(os.TempDir(), fmt.Sprintf("diff-output%d", int32(time.Now().Unix())))
 	_, _, err = cmd.Run(diffExporterBin, "-outputFile", diffOutputFile, "-containerId", containerId, "-bundlePath", bundleDir)
 	if err != nil {
 		return fmt.Errorf("diff-exporter failed: %s", err)
 	}
-	//
-	// 	fmt.Printf("%s\n", "Running hydrator")
-	// 	_, _, err = cmd.Run(hydrateBin, "add-layer", "-ociImage", uri, "-layer", diffOutputFile)
-	// 	if err != nil {
-	// 		return fmt.Errorf("hydrator failed\n")
-	// 	}
+
+	_, _, err = cmd.Run(hydrateBin, "add-layer", "-ociImage", ociImageUris[0], "-layer", diffOutputFile)
+	if err != nil {
+		return fmt.Errorf("hydrate add-layer failed: %s", err)
+	}
 	//
 	// 	fmt.Printf("%s\n", "Cleaning up")
 	// 	_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", containerId)
