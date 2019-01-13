@@ -30,7 +30,7 @@ var _ = Describe("cert-injector", func() {
 		grootOutput = []byte("gibberish")
 		args = []string{"cert-injector.exe", driverStore, "fakes/really-has-certs.crt", ociImageUri}
 
-		fakeCmd.RunCall.Returns = make([]fakes.RunCallReturn, 5)
+		fakeCmd.RunCall.Returns = make([]fakes.RunCallReturn, 6)
 		fakeCmd.RunCall.Returns[1].Stdout = grootOutput
 	})
 
@@ -63,6 +63,10 @@ var _ = Describe("cert-injector", func() {
 		By("calling hydrator to add the new layer")
 		Expect(fakeCmd.RunCall.Receives[4].Executable).To(ContainSubstring("hydrate.exe"))
 		Expect(fakeCmd.RunCall.Receives[4].Args).To(ConsistOf("add-layer", "-ociImage", ociImageUri, "-layer", ContainSubstring("diff-output")))
+
+		By("calling groot to delete the volume")
+		Expect(fakeCmd.RunCall.Receives[5].Executable).To(ContainSubstring("groot.exe"))
+		Expect(fakeCmd.RunCall.Receives[5].Args).To(ConsistOf("--driver-store", driverStore, "delete", ociImageUri))
 	})
 
 	Describe("error cases", func() {
@@ -156,6 +160,16 @@ var _ = Describe("cert-injector", func() {
 			It("should return a helpful error", func() {
 				err := Run(args, fakeCmd, fakeConfig)
 				Expect(err).To(MatchError("hydrate add-layer failed: hydrate add-layer is unhappy"))
+			})
+		})
+
+		Context("when groot fails to delete a volume", func() {
+			BeforeEach(func() {
+				fakeCmd.RunCall.Returns[5].Error = errors.New("groot is unhappy")
+			})
+			It("returns a helpful error message", func() {
+				err := Run(args, fakeCmd, fakeConfig)
+				Expect(err).To(MatchError("groot delete failed: groot is unhappy"))
 			})
 		})
 	})

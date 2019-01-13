@@ -117,12 +117,11 @@ func Run(args []string, cmd cmd, conf conf) error {
 	if err != nil {
 		return fmt.Errorf("hydrate add-layer failed: %s", err)
 	}
-	//
-	// 	fmt.Printf("%s\n", "Cleaning up")
-	// 	_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", containerId)
-	// 	if err != nil {
-	// 		return fmt.Errorf("groot delete failed\n")
-	// 	}
+
+	_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", ociImageUris[0])
+	if err != nil {
+		return fmt.Errorf("groot delete failed: %s", err)
+	}
 	// 	err = os.RemoveAll(diffOutputFile)
 	// 	if err != nil {
 	// 		return fmt.Errorf("diff output file deletion failed\n")
