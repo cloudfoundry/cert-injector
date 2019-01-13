@@ -1,69 +1,34 @@
 package fakes
 
-import (
-	"strings"
-)
-
-type RetVal struct {
-	Stdout []byte
-	Stderr []byte
-	Err    error
-}
-
-/* Represents all calls to a binary */
-type Call struct {
-	CallCount    int
-	RecievedArgs []string
-	ReturnVal    *RetVal
-}
-
-type RunCall struct {
-	Calls map[string]*Call
-}
-
-func (r *RunCall) initCall(execBin string) {
-	if _, ok := r.Calls[execBin]; !ok {
-		r.Calls[execBin] = &Call{}
-		r.Calls[execBin].ReturnVal = &RetVal{[]byte(""), []byte(""), nil}
+type Cmd struct {
+	RunCall struct {
+		CallCount int
+		Receives  []RunCallReceive
+		Returns   []RunCallReturn
 	}
 }
 
-func (r *RunCall) Returns(execBin string, stdout []byte, stderr []byte, err error) {
-	r.initCall(execBin)
-	call := r.Calls[execBin]
-	call.ReturnVal = &RetVal{stdout, stderr, err}
+type RunCallReceive struct {
+	Executable string
+	Args       []string
 }
 
-func (r *RunCall) CallCount(execBin string) int {
-	r.initCall(execBin)
-	call := r.Calls[execBin]
-	return call.CallCount
-}
-
-func (r *RunCall) ReceivedArgs(execBin string) []string {
-	r.initCall(execBin)
-	call := r.Calls[execBin]
-	return call.RecievedArgs
-}
-
-type Cmd struct {
-	RunCalls *RunCall
-}
-
-func NewCmd() *Cmd {
-	cmd := &Cmd{}
-	cmd.RunCalls = &RunCall{}
-	cmd.RunCalls.Calls = make(map[string]*Call)
-	return cmd
+type RunCallReturn struct {
+	Stdout []byte
+	Stderr []byte
+	Error  error
 }
 
 func (c *Cmd) Run(executable string, args ...string) ([]byte, []byte, error) {
-	execPath := strings.Split(executable, "\\")
-	execBin := execPath[len(execPath)-1]
-	c.RunCalls.initCall(execBin)
-	call := c.RunCalls.Calls[execBin]
-	call.RecievedArgs = args
-	call.CallCount++
-	ret := call.ReturnVal
-	return ret.Stdout, ret.Stderr, ret.Err
+	c.RunCall.CallCount++
+	c.RunCall.Receives = append(c.RunCall.Receives, RunCallReceive{
+		Executable: executable,
+		Args:       args,
+	})
+
+	if len(c.RunCall.Returns) < c.RunCall.CallCount {
+		return nil, nil, nil
+	}
+
+	return c.RunCall.Returns[c.RunCall.CallCount-1].Stdout, c.RunCall.Returns[c.RunCall.CallCount-1].Stderr, c.RunCall.Returns[c.RunCall.CallCount-1].Error
 }

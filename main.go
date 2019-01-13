@@ -99,17 +99,15 @@ func Run(args []string, cmd cmd, conf conf) error {
 		return fmt.Errorf("Write container config failed: %s", err)
 	}
 
-	//
-	// 	//TODO: merge the config.json previously created, with the output of groot and write it out as config.json
+	// TODO: merge the config.json previously created, with the output of groot and write it out as config.json
 	// 	configFile.Sync()
-	//
 
 	_, _, err = cmd.Run(wincBin, "run", "-b", bundleDir, containerId)
 	if err != nil {
 		return fmt.Errorf("winc run failed: %s", err)
 	}
-	//
-	// 	fmt.Printf("%s\n", "Running diff-exporter")
+
+	// Running diff-exporter
 	diffOutputFile := filepath.Join(os.TempDir(), fmt.Sprintf("diff-output%d", int32(time.Now().Unix())))
 	_, _, err = cmd.Run(diffExporterBin, "-outputFile", diffOutputFile, "-containerId", containerId, "-bundlePath", bundleDir)
 	if err != nil {
