@@ -35,7 +35,7 @@ func (c Config) Write(bundleDir string, grootOutput []byte, certData []byte) err
 
 	err := json.Unmarshal(grootOutput, &config)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("json unmarshal groot output: %s", err)
 	}
 
 	command := fmt.Sprintf(ImportCertificatePs, string(certData))

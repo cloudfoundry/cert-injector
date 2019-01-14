@@ -33,7 +33,7 @@ var _ = Describe("Config", func() {
 	})
 
 	AfterEach(func() {
-		Expect(os.Remove(path)).NotTo(HaveOccurred())
+		Expect(os.RemoveAll(path)).NotTo(HaveOccurred())
 	})
 
 	It("encodes a script to import the certificates and writes it to config.json", func() {
@@ -51,5 +51,12 @@ var _ = Describe("Config", func() {
 		decoded, err := base64.StdEncoding.DecodeString(cont.Process.Args[2])
 		Expect(err).NotTo(HaveOccurred())
 		Expect(string(decoded)).To(Equal(fmt.Sprintf(container.ImportCertificatePs, string(certData))))
+	})
+
+	Context("when the groot output is invalid json", func() {
+		It("returns  helpful error message", func() {
+			err := conf.Write(bundleDir, []byte("$$$"), certData)
+			Expect(err).To(MatchError("json unmarshal groot output: invalid character '$' looking for beginning of value"))
+		})
 	})
 })
