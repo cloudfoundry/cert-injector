@@ -10,7 +10,6 @@ import (
 
 	"code.cloudfoundry.org/cert-injector/command"
 	"code.cloudfoundry.org/cert-injector/container"
-	"code.cloudfoundry.org/filelock"
 )
 
 const (
@@ -30,6 +29,7 @@ type conf interface {
 }
 
 func Run(args []string, cmd cmd, conf conf) error {
+	// There are multiple image uris because groot.cached_image_uris is an array.
 	if len(args) < 4 {
 		return fmt.Errorf("usage: %s <driver_store> <cert_file> <image_uri>...\n", args[0])
 	}
@@ -55,32 +55,6 @@ func Run(args []string, cmd cmd, conf conf) error {
 
 	grootDriverStore := args[1]
 
-	// TODO: the hydrator that is altering the rootfs is not looking at this lock file anyway, so we are punting right now
-	lock, err := filelock.NewLocker(filepath.Join(os.TempDir(), LockFileName)).Open()
-	if err != nil {
-		return fmt.Errorf("open lock: %s\n", err)
-	}
-	defer lock.Close()
-
-	// workaround for https://github.com/Microsoft/hcsshim/issues/155
-	// fmt.Printf("%s\n", "Deleting existing containers")
-	// _, _, err = cmd.Run("powershell.exe", "-c", fmt.Sprintf("Get-ComputeProcess | foreach { & %s delete $_.Id }", wincBin))
-	// if err != nil {
-	// 	return fmt.Errorf("Cannot delete existing containers\n")
-	// }
-	//
-	// files, err := ioutil.ReadDir(fmt.Sprintf("%s\\volumes", grootDriverStore))
-	// if !os.IsNotExist(err) {
-	// 	return fmt.Errorf("groot delete failed: %s\n", err)
-	// }
-	//
-	// for _, file := range files {
-	// 	_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", file.Name())
-	// 	if err != nil {
-	// 		return fmt.Errorf("groot delete failed: %s", err)
-	// 	}
-	// }
-
 	for _, uri := range ociImageUris {
 		grootOutput, _, err := cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri)
 		if err != nil {
@@ -99,9 +73,6 @@ func Run(args []string, cmd cmd, conf conf) error {
 			return fmt.Errorf("Write container config failed: %s", err)
 		}
 
-		// TODO: merge the config.json previously created, with the output of groot and write it out as config.json
-		// 	configFile.Sync()
-
 		_, _, err = cmd.Run(wincBin, "run", "-b", bundleDir, containerId)
 		if err != nil {
 			return fmt.Errorf("winc run failed: %s", err)
@@ -110,7 +81,7 @@ func Run(args []string, cmd cmd, conf conf) error {
 		diffOutputFile := filepath.Join(os.TempDir(), fmt.Sprintf("diff-output%d", int32(time.Now().Unix())))
 		_, _, err = cmd.Run(diffExporterBin, "-outputFile", diffOutputFile, "-containerId", containerId, "-bundlePath", bundleDir)
 		if err != nil {
-			return fmt.Errorf("diff-exporter failed: %s", err)
+			return fmt.Errorf("diff-exporter failed exporting the layer: %s", err)
 		}
 
 		_, _, err = cmd.Run(hydrateBin, "add-layer", "-ociImage", uri, "-layer", diffOutputFile)

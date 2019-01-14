@@ -200,7 +200,7 @@ var _ = Describe("cert-injector", func() {
 			})
 			It("returns a helpful error message", func() {
 				err := Run(args, fakeCmd, fakeConfig)
-				Expect(err).To(MatchError("diff-exporter failed: diff-exporter is unhappy"))
+				Expect(err).To(MatchError("diff-exporter failed exporting the layer: diff-exporter is unhappy"))
 			})
 		})
 

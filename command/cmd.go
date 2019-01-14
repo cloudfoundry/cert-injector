@@ -8,6 +8,7 @@ import (
 type Cmd struct {
 }
 
+// TODO: Inject stdout and stderr instead of returning a buffer
 func NewCmd() *Cmd {
 	return &Cmd{}
 }
