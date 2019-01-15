@@ -22,5 +22,7 @@ func (c *Cmd) Run(executable string, args ...string) ([]byte, []byte, error) {
 	command.Stdout = &outbuff
 	command.Stderr = &errbuff
 	err = command.Run()
+
+	// TODO: wrap error returned with executable and args
 	return outbuff.Bytes(), errbuff.Bytes(), err
 }

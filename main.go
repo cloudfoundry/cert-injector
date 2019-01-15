@@ -58,6 +58,7 @@ func Run(args []string, cmd cmd, conf conf) error {
 		containerId := fmt.Sprintf("layer-%d", int32(time.Now().Unix()))
 		grootOutput, stderr, err := cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri, containerId)
 		if err != nil {
+			// TODO: write to stdout/stderr better
 			os.Stdout.Write(grootOutput)
 			os.Stderr.Write(stderr)
 			return fmt.Errorf("groot create failed: %s", err)
@@ -74,8 +75,11 @@ func Run(args []string, cmd cmd, conf conf) error {
 			return fmt.Errorf("Write container config failed: %s", err)
 		}
 
-		_, _, err = cmd.Run(wincBin, "run", "-b", bundleDir, containerId)
+		stdout, stderr, err := cmd.Run(wincBin, "run", "-b", bundleDir, containerId)
 		if err != nil {
+			// TODO: write to stdout/stderr better
+			os.Stdout.Write(stdout)
+			os.Stderr.Write(stderr)
 			return fmt.Errorf("winc run failed: %s", err)
 		}
 
