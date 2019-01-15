@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	LockFileName    = "GrootRootfsMutex"
 	grootBin        = "c:\\var\\vcap\\packages\\groot\\groot.exe"
 	wincBin         = "c:\\var\\vcap\\packages\\winc\\winc.exe"
 	diffExporterBin = "c:\\var\\vcap\\packages\\diff-exporter\\diff-exporter.exe"
@@ -56,8 +55,10 @@ func Run(args []string, cmd cmd, conf conf) error {
 	grootDriverStore := args[1]
 
 	for _, uri := range ociImageUris {
-		grootOutput, _, err := cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri)
+		grootOutput, stderr, err := cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri)
 		if err != nil {
+			os.Stdout.Write(grootOutput)
+			os.Stderr.Write(stderr)
 			return fmt.Errorf("groot create failed: %s", err)
 		}
 
@@ -104,11 +105,11 @@ func Run(args []string, cmd cmd, conf conf) error {
 }
 
 func main() {
-	logger := log.New(os.Stderr, "", 0)
 	cmd := command.NewCmd()
 	conf := container.NewConfig()
-	if err := Run(os.Args, cmd, conf); err != nil {
-		logger.Print(err)
-		os.Exit(1)
+
+	err := Run(os.Args, cmd, conf)
+	if err != nil {
+		log.Fatalf("cert-injector failed: %s", err)
 	}
 }
