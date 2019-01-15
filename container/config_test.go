@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	oci "github.com/opencontainers/runtime-spec/specs-go"
+	"golang.org/x/text/encoding/unicode"
 )
 
 var _ = Describe("Config", func() {
@@ -48,9 +49,14 @@ var _ = Describe("Config", func() {
 		Expect(cont.Version).To(Equal("2.2.2"))
 		Expect(cont.Process.Cwd).To(Equal("C:\\"))
 
-		decoded, err := base64.StdEncoding.DecodeString(cont.Process.Args[2])
+		decodedUTF16, err := base64.StdEncoding.DecodeString(cont.Process.Args[2])
 		Expect(err).NotTo(HaveOccurred())
-		Expect(string(decoded)).To(Equal(fmt.Sprintf(container.ImportCertificatePs, certData)))
+
+		decoder := unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder()
+		decodedUTF8, err := decoder.String(string(decodedUTF16))
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(decodedUTF8).To(Equal(fmt.Sprintf(container.ImportCertificatePs, certData)))
 	})
 
 	Context("when the groot output is invalid json", func() {

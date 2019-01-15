@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	oci "github.com/opencontainers/runtime-spec/specs-go"
+	"golang.org/x/text/encoding/unicode"
 )
 
 const ImportCertificatePs = `
@@ -39,8 +40,16 @@ func (c Config) Write(bundleDir string, grootOutput []byte, certData string) err
 	}
 
 	command := fmt.Sprintf(ImportCertificatePs, certData)
+	// The command variable contains a UTF-8 string. However, the -EncodedCommand
+	// argument to powershell expects a Base-64 encoded UTF-16 string. So we convert
+	// our string to UTF-16 before Base-64 encoding it.
+	encoder := unicode.UTF16(unicode.LittleEndian, unicode.IgnoreBOM).NewEncoder()
+	utf16command, err := encoder.Bytes([]byte(command))
+	if err != nil {
+		return fmt.Errorf("could not convert command to UTF-16 %s", err.Error())
+	}
 
-	encodedCommand := base64.StdEncoding.EncodeToString([]byte(command))
+	encodedCommand := base64.StdEncoding.EncodeToString(utf16command)
 
 	config.Process = &oci.Process{
 		Args: []string{"powershell.exe", "-EncodedCommand", encodedCommand},
