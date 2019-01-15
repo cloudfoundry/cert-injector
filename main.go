@@ -55,14 +55,14 @@ func Run(args []string, cmd cmd, conf conf) error {
 	grootDriverStore := args[1]
 
 	for _, uri := range ociImageUris {
-		grootOutput, stderr, err := cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri)
+		containerId := fmt.Sprintf("layer-%d", int32(time.Now().Unix()))
+		grootOutput, stderr, err := cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri, containerId)
 		if err != nil {
 			os.Stdout.Write(grootOutput)
 			os.Stderr.Write(stderr)
 			return fmt.Errorf("groot create failed: %s", err)
 		}
 
-		containerId := fmt.Sprintf("layer-%d", int32(time.Now().Unix()))
 		bundleDir := filepath.Join(os.TempDir(), containerId)
 		err = os.MkdirAll(bundleDir, 0755)
 		if err != nil {
@@ -90,7 +90,7 @@ func Run(args []string, cmd cmd, conf conf) error {
 			return fmt.Errorf("hydrate add-layer failed: %s", err)
 		}
 
-		_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", uri)
+		_, _, err = cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", containerId)
 		if err != nil {
 			return fmt.Errorf("groot delete failed: %s", err)
 		}
