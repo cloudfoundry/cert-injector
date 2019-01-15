@@ -11,14 +11,14 @@ type Config struct {
 type WriteCallReceive struct {
 	BundleDir   string
 	GrootOutput []byte
-	CertData    []byte
+	CertData    string
 }
 
 type WriteCallReturn struct {
 	Error error
 }
 
-func (c *Config) Write(bundleDir string, grootOutput []byte, certData []byte) error {
+func (c *Config) Write(bundleDir string, grootOutput []byte, certData string) error {
 	c.WriteCall.CallCount++
 
 	c.WriteCall.Receives = append(c.WriteCall.Receives, WriteCallReceive{

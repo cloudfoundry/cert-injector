@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -24,29 +23,21 @@ type cmd interface {
 }
 
 type conf interface {
-	Write(bundleDir string, grootOutput []byte, certData []byte) error
+	Write(bundleDir string, grootOutput []byte, certData string) error
 }
 
 func Run(args []string, cmd cmd, conf conf) error {
 	// There are multiple image uris because groot.cached_image_uris is an array.
 	if len(args) < 4 {
-		return fmt.Errorf("usage: %s <driver_store> <cert_file> <image_uri>...\n", args[0])
+		return fmt.Errorf("usage: %s <driver_store> <cert_data> <image_uri>...\n", args[0])
 	}
 
-	certFile := args[2]
-	certData, err := ioutil.ReadFile(certFile)
-	if err != nil {
-		return fmt.Errorf("Failed to read cert_file: %s", err)
-	}
-
-	if len(certData) == 0 {
-		return nil
-	}
+	certData := args[2]
 
 	ociImageUris := args[3:]
 
 	for _, uri := range ociImageUris {
-		_, _, err = cmd.Run(hydrateBin, "remove-layer", "-ociImage", uri)
+		_, _, err := cmd.Run(hydrateBin, "remove-layer", "-ociImage", uri)
 		if err != nil {
 			return fmt.Errorf("hydrate.exe remove-layer -ociImage %s failed: %s\n", uri, err)
 		}

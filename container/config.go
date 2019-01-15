@@ -30,7 +30,7 @@ func NewConfig() Config {
 // of groot and a powershell script that will import
 // the user-provided certificates to be run on the
 // container.
-func (c Config) Write(bundleDir string, grootOutput []byte, certData []byte) error {
+func (c Config) Write(bundleDir string, grootOutput []byte, certData string) error {
 	config := oci.Spec{}
 
 	err := json.Unmarshal(grootOutput, &config)
@@ -38,7 +38,7 @@ func (c Config) Write(bundleDir string, grootOutput []byte, certData []byte) err
 		return fmt.Errorf("json unmarshal groot output: %s", err)
 	}
 
-	command := fmt.Sprintf(ImportCertificatePs, string(certData))
+	command := fmt.Sprintf(ImportCertificatePs, certData)
 
 	encodedCommand := base64.StdEncoding.EncodeToString([]byte(command))
 

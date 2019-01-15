@@ -17,7 +17,7 @@ import (
 var _ = Describe("Config", func() {
 	var (
 		bundleDir   string
-		certData    []byte
+		certData    string
 		grootOutput []byte
 		path        string
 
@@ -25,7 +25,7 @@ var _ = Describe("Config", func() {
 	)
 	BeforeEach(func() {
 		bundleDir = os.TempDir()
-		certData = []byte("really-a-cert")
+		certData = "cert-base64-encoded"
 		grootOutput = []byte(`{"ociVersion": "2.2.2"}`)
 		path = filepath.Join(bundleDir, "config.json")
 
@@ -50,7 +50,7 @@ var _ = Describe("Config", func() {
 
 		decoded, err := base64.StdEncoding.DecodeString(cont.Process.Args[2])
 		Expect(err).NotTo(HaveOccurred())
-		Expect(string(decoded)).To(Equal(fmt.Sprintf(container.ImportCertificatePs, string(certData))))
+		Expect(string(decoded)).To(Equal(fmt.Sprintf(container.ImportCertificatePs, certData)))
 	})
 
 	Context("when the groot output is invalid json", func() {

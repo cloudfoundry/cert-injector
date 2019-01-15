@@ -16,6 +16,7 @@ var _ = Describe("cert-injector", func() {
 		fakeConfig *fakes.Config
 
 		driverStore string
+		certData    string
 		ociImageUri string
 		grootOutput []byte
 		args        []string
@@ -26,9 +27,10 @@ var _ = Describe("cert-injector", func() {
 		fakeConfig = &fakes.Config{}
 
 		driverStore = "some-driver-store"
+		certData = "cert-data-base64-encoded"
 		ociImageUri = "oci:///first-image-uri"
 		grootOutput = []byte("gibberish")
-		args = []string{"cert-injector.exe", driverStore, "fakes/really-has-certs.crt", ociImageUri}
+		args = []string{"cert-injector.exe", driverStore, certData, ociImageUri}
 
 		fakeCmd.RunCall.Returns = make([]fakes.RunCallReturn, 20)
 		fakeCmd.RunCall.Returns[1].Stdout = grootOutput
@@ -52,7 +54,7 @@ var _ = Describe("cert-injector", func() {
 		Expect(fakeConfig.WriteCall.CallCount).To(Equal(1))
 		Expect(fakeConfig.WriteCall.Receives[0].BundleDir).To(ContainSubstring("layer"))
 		Expect(fakeConfig.WriteCall.Receives[0].GrootOutput).To(Equal(grootOutput))
-		Expect(string(fakeConfig.WriteCall.Receives[0].CertData)).To(ContainSubstring("this-is-a-cert"))
+		Expect(fakeConfig.WriteCall.Receives[0].CertData).To(Equal(certData))
 
 		By("calling winc to create a container")
 		Expect(fakeCmd.RunCall.Receives[2].Executable).To(ContainSubstring("winc.exe"))
@@ -98,7 +100,7 @@ var _ = Describe("cert-injector", func() {
 			By("creating a bundle directory and container config twice")
 			Expect(fakeConfig.WriteCall.Receives[1].BundleDir).To(ContainSubstring("layer"))
 			Expect(fakeConfig.WriteCall.Receives[1].GrootOutput).To(Equal(grootOutput))
-			Expect(string(fakeConfig.WriteCall.Receives[1].CertData)).To(ContainSubstring("this-is-a-cert"))
+			Expect(fakeConfig.WriteCall.Receives[1].CertData).To(Equal(certData))
 
 			By("calling winc to create a container twice")
 			Expect(fakeCmd.RunCall.Receives[8].Executable).To(ContainSubstring("winc.exe"))
@@ -125,29 +127,7 @@ var _ = Describe("cert-injector", func() {
 		Context("when cert-injector is called with incorrect arguments", func() {
 			It("prints the usage", func() {
 				err := Run([]string{"cert-injector.exe"}, fakeCmd, fakeConfig)
-				Expect(err).To(MatchError(fmt.Sprintf("usage: %s <driver_store> <cert_file> <image_uri>...\n", args[0])))
-			})
-		})
-
-		Context("when the cert_file does not exist", func() {
-			BeforeEach(func() {
-				args = []string{"cert-injector.exe", "", "not-a-real-file.crt", ""}
-			})
-
-			It("returns a helpful error", func() {
-				err := Run(args, fakeCmd, fakeConfig)
-				Expect(err).To(MatchError("Failed to read cert_file: open not-a-real-file.crt: no such file or directory"))
-			})
-		})
-
-		Context("when there are no trusted certs to inject", func() {
-			BeforeEach(func() {
-				args = []string{"cert-injector.exe", "", "fakes/empty.crt", ""}
-			})
-
-			It("does not check other arguments and exits successfully", func() {
-				err := Run(args, fakeCmd, fakeConfig)
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).To(MatchError(fmt.Sprintf("usage: %s <driver_store> <cert_data> <image_uri>...\n", args[0])))
 			})
 		})
 
