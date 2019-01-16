@@ -27,10 +27,10 @@ func NewConfig() Config {
 	return Config{}
 }
 
-// Write creates a file that contains the output
-// of groot and a powershell script that will import
-// the user-provided certificates to be run on the
-// container.
+// Write creates the container runtime config.json file,
+// using the output of groot for the Root.Path field and the Windows.LayerFolders field.
+// The Process field contains a command that will add
+// the user-provided certificates to the container.
 func (c Config) Write(bundleDir string, grootOutput []byte, certData string) error {
 	config := oci.Spec{}
 

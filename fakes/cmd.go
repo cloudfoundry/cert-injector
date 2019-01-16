@@ -5,8 +5,11 @@ type Cmd struct {
 		CallCount int
 		Receives  []RunCallReceive
 		Returns   []RunCallReturn
+		OnCall    []RunCallOnCall
 	}
 }
+
+type RunCallOnCall func(executable string, args ...string) ([]byte, []byte, error)
 
 type RunCallReceive struct {
 	Executable string
@@ -26,6 +29,10 @@ func (c *Cmd) Run(executable string, args ...string) ([]byte, []byte, error) {
 		Executable: executable,
 		Args:       args,
 	})
+
+	if onCall := c.RunCall.OnCall[c.RunCall.CallCount-1]; onCall != nil {
+		return onCall(executable, args...)
+	}
 
 	if len(c.RunCall.Returns) < c.RunCall.CallCount {
 		return nil, nil, nil

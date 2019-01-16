@@ -8,11 +8,11 @@ import (
 type Cmd struct {
 }
 
-// TODO: Inject stdout and stderr instead of returning a buffer
 func NewCmd() *Cmd {
 	return &Cmd{}
 }
 
+// TODO: Inject stdout and stderr instead of returning a buffer
 func (c *Cmd) Run(executable string, args ...string) ([]byte, []byte, error) {
 	var command *exec.Cmd
 	var outbuff, errbuff bytes.Buffer
