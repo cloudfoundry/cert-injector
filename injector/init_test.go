@@ -1,4 +1,4 @@
-package main_test
+package injector_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCertInjector(t *testing.T) {
+func TestInjector(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "CertInjector Suite")
+	RunSpecs(t, "Injector Suite")
 }
