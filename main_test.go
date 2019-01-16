@@ -1,7 +1,6 @@
 package main_test
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -16,22 +15,22 @@ var _ = Describe("cert-injector", func() {
 	var (
 		fakeCmd    *fakes.Cmd
 		fakeConfig *fakes.Config
+		stdout     *fakes.Logger
+		stderr     *fakes.Logger
 
 		driverStore string
 		certData    string
 		ociImageUri string
 		grootOutput []byte
 		args        []string
-		stdOut      *bytes.Buffer
-		stdErr      *bytes.Buffer
 		layerTgz    string
 	)
 
 	BeforeEach(func() {
-		stdOut = new(bytes.Buffer)
-		stdErr = new(bytes.Buffer)
 		fakeCmd = &fakes.Cmd{}
 		fakeConfig = &fakes.Config{}
+		stdout = &fakes.Logger{}
+		stderr = &fakes.Logger{}
 
 		driverStore = "some-driver-store"
 		certData = "cert-data-base64-encoded"
@@ -54,7 +53,7 @@ var _ = Describe("cert-injector", func() {
 	})
 
 	It("replaces custom layers with a new layer with new certificates", func() {
-		err := Run(args, fakeCmd, fakeConfig, stdOut, stdErr)
+		err := Run(args, fakeCmd, fakeConfig, stdout, stderr)
 		Expect(err).NotTo(HaveOccurred())
 
 		By("calling hydrator to remove the old layer")
@@ -117,7 +116,7 @@ var _ = Describe("cert-injector", func() {
 		})
 
 		It("does the loop for each one", func() {
-			err := Run(args, fakeCmd, fakeConfig, stdOut, stdErr)
+			err := Run(args, fakeCmd, fakeConfig, stdout, stderr)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("calling hydrator to remove the old layer twice")
@@ -164,7 +163,7 @@ var _ = Describe("cert-injector", func() {
 
 		Context("when cert-injector is called with incorrect arguments", func() {
 			It("prints the usage", func() {
-				err := Run([]string{"cert-injector.exe"}, fakeCmd, fakeConfig, stdOut, stdErr)
+				err := Run([]string{"cert-injector.exe"}, fakeCmd, fakeConfig, stdout, stderr)
 				Expect(err).To(MatchError(fmt.Sprintf("usage: %s <driver_store> <cert_data> <image_uri>...\n", args[0])))
 			})
 		})
@@ -175,7 +174,7 @@ var _ = Describe("cert-injector", func() {
 			})
 
 			It("should return a helpful error", func() {
-				err := Run(args, fakeCmd, fakeConfig, stdOut, stdErr)
+				err := Run(args, fakeCmd, fakeConfig, stdout, stderr)
 				Expect(err).To(MatchError("hydrate.exe remove-layer -ociImage oci:///first-image-uri failed: hydrator is unhappy\n"))
 			})
 		})
@@ -185,7 +184,7 @@ var _ = Describe("cert-injector", func() {
 				fakeCmd.RunCall.Returns[1].Error = errors.New("groot is unhappy")
 			})
 			It("returns a helpful error message", func() {
-				err := Run(args, fakeCmd, fakeConfig, stdOut, stdErr)
+				err := Run(args, fakeCmd, fakeConfig, stdout, stderr)
 				Expect(err).To(MatchError("groot create failed: groot is unhappy"))
 			})
 		})
@@ -196,8 +195,8 @@ var _ = Describe("cert-injector", func() {
 			})
 
 			It("returns a helpful error message, deletes the bundle dir, and deletes the volume created by groot", func() {
-				err := Run(args, fakeCmd, fakeConfig, stdOut, stdErr)
-				Expect(err).To(MatchError("Write container config failed: banana"))
+				err := Run(args, fakeCmd, fakeConfig, stdout, stderr)
+				Expect(err).To(MatchError("container config write failed: banana"))
 
 				Expect(fakeConfig.WriteCall.Receives[0].BundleDir).NotTo(BeAnExistingFile())
 				Expect(fakeCmd.RunCall.Receives[2].Executable).To(ContainSubstring("groot.exe"))
@@ -211,7 +210,7 @@ var _ = Describe("cert-injector", func() {
 			})
 
 			It("returns a helpful error message, deletes the bundle dir, and deletes the volume created by groot", func() {
-				err := Run(args, fakeCmd, fakeConfig, stdOut, stdErr)
+				err := Run(args, fakeCmd, fakeConfig, stdout, stderr)
 				Expect(err).To(MatchError("winc run failed: winc is unhappy"))
 
 				Expect(fakeConfig.WriteCall.Receives[0].BundleDir).NotTo(BeAnExistingFile())
@@ -225,7 +224,7 @@ var _ = Describe("cert-injector", func() {
 				fakeCmd.RunCall.Returns[3].Error = errors.New("diff-exporter is unhappy")
 			})
 			It("returns a helpful error message, deletes the bundle dir, and deletes the volume created by groot", func() {
-				err := Run(args, fakeCmd, fakeConfig, stdOut, stdErr)
+				err := Run(args, fakeCmd, fakeConfig, stdout, stderr)
 				Expect(err).To(MatchError("diff-exporter failed exporting the layer: diff-exporter is unhappy"))
 
 				Expect(fakeConfig.WriteCall.Receives[0].BundleDir).NotTo(BeAnExistingFile())
@@ -247,7 +246,7 @@ var _ = Describe("cert-injector", func() {
 			})
 
 			It("should return a helpful error, deletes the bundle dir, deletes the volume created by groot, and deletes the exported layer.tgz", func() {
-				err := Run(args, fakeCmd, fakeConfig, stdOut, stdErr)
+				err := Run(args, fakeCmd, fakeConfig, stdout, stderr)
 				Expect(err).To(MatchError("hydrate add-layer failed: hydrate add-layer is unhappy"))
 
 				Expect(fakeConfig.WriteCall.Receives[0].BundleDir).NotTo(BeAnExistingFile())
@@ -261,10 +260,12 @@ var _ = Describe("cert-injector", func() {
 			BeforeEach(func() {
 				fakeCmd.RunCall.Returns[5].Error = errors.New("groot is unhappy")
 			})
+
 			It("logs a helpful error message, but does not error", func() {
-				err := Run(args, fakeCmd, fakeConfig, stdOut, stdErr)
+				err := Run(args, fakeCmd, fakeConfig, stdout, stderr)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(stdOut.String()).To(ContainSubstring("groot delete failed\n"))
+
+				Expect(stdout.PrintlnCall.Receives[0].Args[0]).To(Equal("groot delete failed"))
 			})
 		})
 	})

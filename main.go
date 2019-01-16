@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -27,14 +26,18 @@ type conf interface {
 	Write(bundleDir string, grootOutput []byte, certData string) error
 }
 
-func Run(args []string, cmd cmd, conf conf, stdout, stderr io.Writer) error {
+type logger interface {
+	Println(v ...interface{})
+}
+
+func Run(args []string, cmd cmd, conf conf, stdout, stderr logger) error {
 	// There are multiple image uris because groot.cached_image_uris is an array.
 	if len(args) < 4 {
 		return fmt.Errorf("usage: %s <driver_store> <cert_data> <image_uri>...\n", args[0])
 	}
 
+	grootDriverStore := args[1]
 	certData := args[2]
-
 	ociImageUris := args[3:]
 
 	for _, uri := range ociImageUris {
@@ -43,8 +46,6 @@ func Run(args []string, cmd cmd, conf conf, stdout, stderr io.Writer) error {
 			return fmt.Errorf("hydrate.exe remove-layer -ociImage %s failed: %s\n", uri, err)
 		}
 	}
-
-	grootDriverStore := args[1]
 
 	for _, uri := range ociImageUris {
 		if err := injectCert(grootDriverStore, uri, certData, cmd, conf, stdout, stderr); err != nil {
@@ -55,41 +56,39 @@ func Run(args []string, cmd cmd, conf conf, stdout, stderr io.Writer) error {
 	return nil
 }
 
-func injectCert(grootDriverStore, uri, certData string, cmd cmd, conf conf, stdout, stderr io.Writer) error {
+func injectCert(grootDriverStore, uri, certData string, cmd cmd, conf conf, stdout, stderr logger) error {
 	containerId := fmt.Sprintf("layer-%d", int32(time.Now().Unix()))
 	grootOutput, se, err := cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri, containerId)
 	if err != nil {
-		// TODO: write to stdout/stderr better
-		stdout.Write(grootOutput)
-		stderr.Write(se)
+		stdout.Println(grootOutput)
+		stderr.Println(se)
 		return fmt.Errorf("groot create failed: %s", err)
 	}
 	defer func() {
 		so, se, err := cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", containerId)
 		if err != nil {
-			stdout.Write([]byte("groot delete failed\n"))
-			stdout.Write(so)
-			stderr.Write(se)
+			stdout.Println("groot delete failed")
+			stdout.Println(so)
+			stderr.Println(se)
 		}
 	}()
 
 	bundleDir := filepath.Join(os.TempDir(), containerId)
 	err = os.MkdirAll(bundleDir, 0755)
 	if err != nil {
-		return fmt.Errorf("Failed to create bundle directory: %s\n", err)
+		return fmt.Errorf("create bundle directory failed: %s", err)
 	}
 	defer os.RemoveAll(bundleDir)
 
 	err = conf.Write(bundleDir, grootOutput, certData)
 	if err != nil {
-		return fmt.Errorf("Write container config failed: %s", err)
+		return fmt.Errorf("container config write failed: %s", err)
 	}
 
 	so, se, err := cmd.Run(wincBin, "run", "-b", bundleDir, containerId)
 	if err != nil {
-		// TODO: write to stdout/stderr better
-		stdout.Write(so)
-		stderr.Write(se)
+		stdout.Println(so)
+		stderr.Println(se)
 		return fmt.Errorf("winc run failed: %s", err)
 	}
 
@@ -109,10 +108,13 @@ func injectCert(grootDriverStore, uri, certData string, cmd cmd, conf conf, stdo
 }
 
 func main() {
-	cmd := command.NewCmd()
-	conf := container.NewConfig()
+	stdout := log.New(os.Stdout, "", 0)
+	stderr := log.New(os.Stderr, "", 0)
 
-	err := Run(os.Args, cmd, conf, os.Stdout, os.Stderr)
+	cmd := command.NewCmd()
+	config := container.NewConfig()
+
+	err := Run(os.Args, cmd, config, stdout, stderr)
 	if err != nil {
 		log.Fatalf("cert-injector failed: %s", err)
 	}
