@@ -42,7 +42,7 @@ func NewInjector(cmd cmd, config config, stdout, stderr logger) Injector {
 	}
 }
 
-func (i Injector) InjectCert(grootDriverStore, uri, certData string) error {
+func (i Injector) InjectCert(grootDriverStore, uri, certDirectory string) error {
 	_, _, err := i.cmd.Run(hydrateBin, "remove-layer", "-ociImage", uri)
 	if err != nil {
 		return fmt.Errorf("hydrate remove-layer -ociImage %s failed: %s\n", uri, err)
@@ -72,7 +72,7 @@ func (i Injector) InjectCert(grootDriverStore, uri, certData string) error {
 	}
 	defer os.RemoveAll(bundleDir)
 
-	err = i.config.Write(bundleDir, grootOutput, certData)
+	err = i.config.Write(bundleDir, grootOutput, certDirectory)
 	if err != nil {
 		return fmt.Errorf("container config write failed: %s", err)
 	}

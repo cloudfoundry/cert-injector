@@ -17,11 +17,11 @@ var _ = Describe("cert-injector", func() {
 		stdout     *fakes.Logger
 		stderr     *fakes.Logger
 
-		driverStore string
-		certData    string
-		ociImageUri string
-		grootOutput []byte
-		layerTgz    string
+		driverStore   string
+		certDirectory string
+		ociImageUri   string
+		grootOutput   []byte
+		layerTgz      string
 
 		inj injector.Injector
 	)
@@ -33,7 +33,7 @@ var _ = Describe("cert-injector", func() {
 		stderr = &fakes.Logger{}
 
 		driverStore = "some-driver-store"
-		certData = "cert-data-base64-encoded"
+		certDirectory = "some-directory-containing-certs"
 		ociImageUri = "oci:///first-image-uri"
 		grootOutput = []byte("gibberish")
 
@@ -54,7 +54,7 @@ var _ = Describe("cert-injector", func() {
 	})
 
 	It("replaces custom layers with a new layer with new certificates", func() {
-		err := inj.InjectCert(driverStore, ociImageUri, certData)
+		err := inj.InjectCert(driverStore, ociImageUri, certDirectory)
 		Expect(err).NotTo(HaveOccurred())
 
 		By("calling hydrator to remove the old layer")
@@ -69,7 +69,7 @@ var _ = Describe("cert-injector", func() {
 		Expect(fakeConfig.WriteCall.CallCount).To(Equal(1))
 		Expect(fakeConfig.WriteCall.Receives[0].BundleDir).To(ContainSubstring("layer"))
 		Expect(fakeConfig.WriteCall.Receives[0].GrootOutput).To(Equal(grootOutput))
-		Expect(fakeConfig.WriteCall.Receives[0].CertData).To(Equal(certData))
+		Expect(fakeConfig.WriteCall.Receives[0].CertData).To(Equal(certDirectory))
 
 		By("calling winc to create a container")
 		Expect(fakeCmd.RunCall.Receives[2].Executable).To(ContainSubstring("winc.exe"))
@@ -105,7 +105,7 @@ var _ = Describe("cert-injector", func() {
 			})
 
 			It("should return a helpful error", func() {
-				err := inj.InjectCert(driverStore, ociImageUri, certData)
+				err := inj.InjectCert(driverStore, ociImageUri, certDirectory)
 				Expect(err).To(MatchError("hydrate remove-layer -ociImage oci:///first-image-uri failed: hydrator is unhappy\n"))
 			})
 		})
@@ -116,7 +116,7 @@ var _ = Describe("cert-injector", func() {
 			})
 
 			It("returns a helpful error message", func() {
-				err := inj.InjectCert(driverStore, ociImageUri, certData)
+				err := inj.InjectCert(driverStore, ociImageUri, certDirectory)
 				Expect(err).To(MatchError("groot create failed: groot is unhappy"))
 			})
 		})
@@ -127,7 +127,7 @@ var _ = Describe("cert-injector", func() {
 			})
 
 			It("returns a helpful error message, deletes the bundle dir, and deletes the volume created by groot", func() {
-				err := inj.InjectCert(driverStore, ociImageUri, certData)
+				err := inj.InjectCert(driverStore, ociImageUri, certDirectory)
 				Expect(err).To(MatchError("container config write failed: banana"))
 
 				Expect(fakeConfig.WriteCall.Receives[0].BundleDir).NotTo(BeAnExistingFile())
@@ -142,7 +142,7 @@ var _ = Describe("cert-injector", func() {
 			})
 
 			It("returns a helpful error message, deletes the bundle dir, and deletes the volume created by groot", func() {
-				err := inj.InjectCert(driverStore, ociImageUri, certData)
+				err := inj.InjectCert(driverStore, ociImageUri, certDirectory)
 				Expect(err).To(MatchError("winc run failed: winc is unhappy"))
 
 				Expect(fakeConfig.WriteCall.Receives[0].BundleDir).NotTo(BeAnExistingFile())
@@ -157,7 +157,7 @@ var _ = Describe("cert-injector", func() {
 			})
 
 			It("returns a helpful error message, deletes the bundle dir, and deletes the volume created by groot", func() {
-				err := inj.InjectCert(driverStore, ociImageUri, certData)
+				err := inj.InjectCert(driverStore, ociImageUri, certDirectory)
 				Expect(err).To(MatchError("diff-exporter failed exporting the layer: diff-exporter is unhappy"))
 
 				Expect(fakeConfig.WriteCall.Receives[0].BundleDir).NotTo(BeAnExistingFile())
@@ -179,7 +179,7 @@ var _ = Describe("cert-injector", func() {
 			})
 
 			It("should return a helpful error, deletes the bundle dir, deletes the volume created by groot, and deletes the exported layer.tgz", func() {
-				err := inj.InjectCert(driverStore, ociImageUri, certData)
+				err := inj.InjectCert(driverStore, ociImageUri, certDirectory)
 				Expect(err).To(MatchError("hydrate add-layer failed: hydrate add-layer is unhappy"))
 
 				Expect(fakeConfig.WriteCall.Receives[0].BundleDir).NotTo(BeAnExistingFile())
@@ -195,7 +195,7 @@ var _ = Describe("cert-injector", func() {
 			})
 
 			It("logs a helpful error message, but does not error", func() {
-				err := inj.InjectCert(driverStore, ociImageUri, certData)
+				err := inj.InjectCert(driverStore, ociImageUri, certDirectory)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(stdout.PrintlnCall.Receives[0].Args[0]).To(Equal("groot delete failed"))

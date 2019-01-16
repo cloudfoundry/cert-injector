@@ -22,15 +22,15 @@ func main() {
 
 	// There can be multiple image uris because groot.cached_image_uris is an array.
 	if len(args) < 4 {
-		log.Fatalf("usage: %s <driver_store> <cert_data> <image_uri>...\n", args[0])
+		log.Fatalf("usage: %s <driver_store> <cert_directory> <image_uri>...\n", args[0])
 	}
 
 	driverStore := args[1]
-	certData := args[2]
+	certDirectory := args[2]
 	ociImageUris := args[3:]
 
 	for _, uri := range ociImageUris {
-		err := inj.InjectCert(driverStore, uri, certData)
+		err := inj.InjectCert(driverStore, uri, certDirectory)
 		if err != nil {
 			log.Fatalf("cert-injector failed: %s", err)
 		}
