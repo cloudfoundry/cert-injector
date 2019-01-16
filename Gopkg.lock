@@ -2,7 +2,8 @@
 
 
 [[projects]]
-  digest = "1:41933d387bfa3eaa6a82647914ed7044f7b8355764c24fb920892bc8c03ef0c3"
+  branch = "master"
+  digest = "1:8d485687c449a7db7d4e8e1d6526036fe38e433232416010fe3970c929134073"
   name = "github.com/hpcloud/tail"
   packages = [
     ".",
@@ -12,8 +13,7 @@
     "winfile",
   ]
   pruneopts = "NUT"
-  revision = "a30252cb686a21eb2d0b98132633053ec2f7f1e5"
-  version = "v1.0.0"
+  revision = "a1dbeea552b7c8df4b542c66073e393de198a800"
 
 [[projects]]
   digest = "1:5aee3b3e914d668fe567ebb95d833e681d394929f0fa11323f6a3819eb781335"
@@ -71,25 +71,6 @@
   version = "v1.4.3"
 
 [[projects]]
-  digest = "1:e0cc8395ea893c898ff5eb0850f4d9851c1f57c78c232304a026379a47a552d0"
-  name = "github.com/opencontainers/go-digest"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "279bed98673dd5bef374d3b6e4b09e2af76183bf"
-  version = "v1.0.0-rc1"
-
-[[projects]]
-  digest = "1:11db38d694c130c800d0aefb502fb02519e514dc53d9804ce51d1ad25ec27db6"
-  name = "github.com/opencontainers/image-spec"
-  packages = [
-    "specs-go",
-    "specs-go/v1",
-  ]
-  pruneopts = "NUT"
-  revision = "d60099175f88c47cd379c4738d158884749ed235"
-  version = "v1.0.1"
-
-[[projects]]
   digest = "1:57234a321bf1f8f98a8a9a5122a2404cc60d0800516f4ab7a7b2375e4b2d19ea"
   name = "github.com/opencontainers/runtime-spec"
   packages = ["specs-go"]
@@ -145,11 +126,10 @@
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
-  name = "gopkg.in/fsnotify.v1"
+  name = "gopkg.in/fsnotify/fsnotify.v1"
   packages = ["."]
   pruneopts = "NUT"
   revision = "c2828203cd70a50dcccfb2761f8b1f8ceef9a8e9"
-  source = "https://github.com/fsnotify/fsnotify/archive/v1.4.7.tar.gz"
   version = "v1.4.7"
 
 [[projects]]
@@ -175,7 +155,6 @@
     "github.com/onsi/ginkgo",
     "github.com/onsi/ginkgo/ginkgo",
     "github.com/onsi/gomega",
-    "github.com/opencontainers/image-spec/specs-go/v1",
     "github.com/opencontainers/runtime-spec/specs-go",
   ]
   solver-name = "gps-cdcl"
