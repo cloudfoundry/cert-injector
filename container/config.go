@@ -10,7 +10,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
-const ImportCertificatePs = `ls c:\trusted_certs | foreach { Import-Certificate -CertStoreLocation Cert:\\LocalMachine\Root -FilePath $_.Name }`
+const ImportCertificatePs = `$ErrorActionPreference = "Stop"; trap { $host.SetShouldExit(1) }; ls "c:\trusted_certs" | foreach {$file="c:\trusted_certs\"+$_.Name; Import-Certificate -CertStoreLocation Cert:\\LocalMachine\Root -FilePath $file}`
 
 type Config struct{}
 
