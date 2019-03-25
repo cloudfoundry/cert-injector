@@ -24,10 +24,10 @@ func NewConfig() Config {
 // the user-provided certificates to the container.
 // The certDirectory is the directory containing certificates that will be bind-mounted
 // into the container
-func (c Config) Write(bundleDir string, grootOutput []byte, certDirectory string) error {
+func (c Config) Write(bundleDir, grootOutput, certDirectory string) error {
 	config := oci.Spec{}
 
-	err := json.Unmarshal(grootOutput, &config)
+	err := json.Unmarshal([]byte(grootOutput), &config)
 	if err != nil {
 		return fmt.Errorf("json unmarshal groot output: %s", err)
 	}

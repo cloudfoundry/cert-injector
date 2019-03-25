@@ -15,11 +15,11 @@ const (
 )
 
 type cmd interface {
-	Run(executable string, args ...string) ([]byte, []byte, error)
+	Run(executable string, args ...string) (string, string, error)
 }
 
 type config interface {
-	Write(bundleDir string, grootOutput []byte, certData string) error
+	Write(bundleDir, grootOutput, certData string) error
 }
 
 type logger interface {
@@ -50,18 +50,18 @@ func (i Injector) InjectCert(grootDriverStore, uri, certDirectory string) error 
 
 	containerId := fmt.Sprintf("layer-%d", int32(time.Now().Unix()))
 
-	grootOutput, se, err := i.cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri, containerId)
+	grootOutput, stderr, err := i.cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri, containerId)
 	if err != nil {
 		i.stdout.Println(grootOutput)
-		i.stderr.Println(se)
+		i.stderr.Println(stderr)
 		return fmt.Errorf("groot create failed: %s", err)
 	}
 	defer func() {
-		so, se, err := i.cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", containerId)
+		stdout, stderr, err := i.cmd.Run(grootBin, "--driver-store", grootDriverStore, "delete", containerId)
 		if err != nil {
 			i.stdout.Println("groot delete failed")
-			i.stdout.Println(so)
-			i.stderr.Println(se)
+			i.stdout.Println(stdout)
+			i.stderr.Println(stderr)
 		}
 	}()
 
@@ -77,10 +77,10 @@ func (i Injector) InjectCert(grootDriverStore, uri, certDirectory string) error 
 		return fmt.Errorf("container config write failed: %s", err)
 	}
 
-	so, se, err := i.cmd.Run(wincBin, "run", "-b", bundleDir, containerId)
+	stdout, stderr, err := i.cmd.Run(wincBin, "run", "-b", bundleDir, containerId)
 	if err != nil {
-		i.stdout.Println(so)
-		i.stderr.Println(se)
+		i.stdout.Println(stdout)
+		i.stderr.Println(stderr)
 		return fmt.Errorf("winc run failed: %s", err)
 	}
 

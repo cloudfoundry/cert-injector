@@ -20,7 +20,7 @@ var _ = Describe("cert-injector", func() {
 		driverStore   string
 		certDirectory string
 		ociImageUri   string
-		grootOutput   []byte
+		grootOutput   string
 		layerTgz      string
 
 		inj injector.Injector
@@ -35,17 +35,17 @@ var _ = Describe("cert-injector", func() {
 		driverStore = "some-driver-store"
 		certDirectory = "some-directory-containing-certs"
 		ociImageUri = "oci:///first-image-uri"
-		grootOutput = []byte("gibberish")
+		grootOutput = "gibberish"
 
 		fakeCmd.RunCall.OnCall = make([]fakes.RunCallOnCall, 20)
 		fakeCmd.RunCall.Returns = make([]fakes.RunCallReturn, 20)
 		fakeCmd.RunCall.Returns[1].Stdout = grootOutput
-		fakeCmd.RunCall.OnCall[3] = func(executable string, args ...string) ([]byte, []byte, error) {
+		fakeCmd.RunCall.OnCall[3] = func(executable string, args ...string) (string, string, error) {
 			Expect(executable).To(ContainSubstring("diff-exporter.exe"))
 			layerTgz = args[1]
 			Expect(layerTgz).To(ContainSubstring("diff-output"))
 			Expect(ioutil.WriteFile(layerTgz, []byte("some-tar-data"), 0644)).To(Succeed())
-			return nil, nil, nil
+			return "", "", nil
 		}
 
 		fakeConfig.WriteCall.Returns = make([]fakes.WriteCallReturn, 2)
@@ -168,12 +168,12 @@ var _ = Describe("cert-injector", func() {
 
 		Context("when hydrator fails to add the new layer", func() {
 			BeforeEach(func() {
-				fakeCmd.RunCall.OnCall[3] = func(executable string, args ...string) ([]byte, []byte, error) {
+				fakeCmd.RunCall.OnCall[3] = func(executable string, args ...string) (string, string, error) {
 					Expect(executable).To(ContainSubstring("diff-exporter.exe"))
 					layerTgz = args[1]
 					Expect(layerTgz).To(ContainSubstring("diff-output"))
 					Expect(ioutil.WriteFile(layerTgz, []byte("some-tar-data"), 0644)).To(Succeed())
-					return nil, nil, nil
+					return "", "", nil
 				}
 				fakeCmd.RunCall.Returns[4].Error = errors.New("hydrate add-layer is unhappy")
 			})

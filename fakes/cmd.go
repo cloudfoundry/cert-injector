@@ -9,7 +9,7 @@ type Cmd struct {
 	}
 }
 
-type RunCallOnCall func(executable string, args ...string) ([]byte, []byte, error)
+type RunCallOnCall func(executable string, args ...string) (string, string, error)
 
 type RunCallReceive struct {
 	Executable string
@@ -17,12 +17,12 @@ type RunCallReceive struct {
 }
 
 type RunCallReturn struct {
-	Stdout []byte
-	Stderr []byte
+	Stdout string
+	Stderr string
 	Error  error
 }
 
-func (c *Cmd) Run(executable string, args ...string) ([]byte, []byte, error) {
+func (c *Cmd) Run(executable string, args ...string) (string, string, error) {
 	c.RunCall.CallCount++
 
 	c.RunCall.Receives = append(c.RunCall.Receives, RunCallReceive{
@@ -35,7 +35,7 @@ func (c *Cmd) Run(executable string, args ...string) ([]byte, []byte, error) {
 	}
 
 	if len(c.RunCall.Returns) < c.RunCall.CallCount {
-		return nil, nil, nil
+		return "", "", nil
 	}
 
 	return c.RunCall.Returns[c.RunCall.CallCount-1].Stdout, c.RunCall.Returns[c.RunCall.CallCount-1].Stderr, c.RunCall.Returns[c.RunCall.CallCount-1].Error

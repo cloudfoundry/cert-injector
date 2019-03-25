@@ -16,7 +16,7 @@ var _ = Describe("Config", func() {
 	var (
 		bundleDir     string
 		certDirectory string
-		grootOutput   []byte
+		grootOutput   string
 		path          string
 
 		conf container.Config
@@ -24,7 +24,7 @@ var _ = Describe("Config", func() {
 	BeforeEach(func() {
 		bundleDir = os.TempDir()
 		certDirectory = "some-directory-containing-certs"
-		grootOutput = []byte(`{"ociVersion": "2.2.2"}`)
+		grootOutput = `{"ociVersion": "2.2.2"}`
 		path = filepath.Join(bundleDir, "config.json")
 
 		conf = container.NewConfig()
@@ -50,7 +50,7 @@ var _ = Describe("Config", func() {
 
 	Context("when the groot output is invalid json", func() {
 		It("returns  helpful error message", func() {
-			err := conf.Write(bundleDir, []byte("$$$"), certDirectory)
+			err := conf.Write(bundleDir, "$$$", certDirectory)
 			Expect(err).To(MatchError("json unmarshal groot output: invalid character '$' looking for beginning of value"))
 		})
 	})
