@@ -85,14 +85,18 @@ func (i Injector) InjectCert(grootDriverStore, uri, certDirectory string) error 
 	}
 
 	diffOutputFile := filepath.Join(os.TempDir(), fmt.Sprintf("diff-output%d", int32(time.Now().Unix())))
-	_, _, err = i.cmd.Run(diffExporterBin, "-outputFile", diffOutputFile, "-containerId", containerId, "-bundlePath", bundleDir)
+	stdout, stderr, err = i.cmd.Run(diffExporterBin, "-outputFile", diffOutputFile, "-containerId", containerId, "-bundlePath", bundleDir)
 	if err != nil {
+		i.stdout.Println(stdout)
+		i.stderr.Println(stderr)
 		return fmt.Errorf("diff-exporter failed exporting the layer: %s", err)
 	}
 	defer os.RemoveAll(diffOutputFile)
 
-	_, _, err = i.cmd.Run(hydrateBin, "add-layer", "-ociImage", uri, "-layer", diffOutputFile)
+	stdout, stderr, err = i.cmd.Run(hydrateBin, "add-layer", "-ociImage", uri, "-layer", diffOutputFile)
 	if err != nil {
+		i.stdout.Println(stdout)
+		i.stderr.Println(stderr)
 		return fmt.Errorf("hydrate add-layer failed: %s", err)
 	}
 

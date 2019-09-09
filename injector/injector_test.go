@@ -153,16 +153,18 @@ var _ = Describe("cert-injector", func() {
 
 		Context("when diff-exporter fails to export the top layer", func() {
 			BeforeEach(func() {
+				fakeCmd.RunCall.Returns[3].Stdout = "diff-exporter is unhappy"
 				fakeCmd.RunCall.Returns[3].Error = errors.New("diff-exporter is unhappy")
 			})
 
-			It("returns a helpful error message, deletes the bundle dir, and deletes the volume created by groot", func() {
+			It("returns a helpful error message", func() {
 				err := inj.InjectCert(driverStore, ociImageUri, certDirectory)
 				Expect(err).To(MatchError("diff-exporter failed exporting the layer: diff-exporter is unhappy"))
 
 				Expect(fakeConfig.WriteCall.Receives[0].BundleDir).NotTo(BeAnExistingFile())
-				Expect(fakeCmd.RunCall.Receives[4].Executable).To(ContainSubstring("groot.exe"))
-				Expect(fakeCmd.RunCall.Receives[4].Args).To(ConsistOf("--driver-store", driverStore, "delete", ContainSubstring("layer")))
+				Expect(fakeCmd.RunCall.Receives[3].Executable).To(ContainSubstring("diff-exporter.exe"))
+				Expect(fakeCmd.RunCall.Receives[3].Args).To(ConsistOf("-outputFile", ContainSubstring("diff-output"), "-containerId", ContainSubstring("layer"), "-bundlePath", ContainSubstring("layer")))
+				Expect(stdout.PrintlnCall.Receives[0].Args[0]).To(Equal("diff-exporter is unhappy"))
 			})
 		})
 
@@ -175,6 +177,7 @@ var _ = Describe("cert-injector", func() {
 					Expect(ioutil.WriteFile(layerTgz, []byte("some-tar-data"), 0644)).To(Succeed())
 					return "", "", nil
 				}
+				fakeCmd.RunCall.Returns[4].Stdout = "hydrate add-layer is unhappy"
 				fakeCmd.RunCall.Returns[4].Error = errors.New("hydrate add-layer is unhappy")
 			})
 
@@ -183,8 +186,9 @@ var _ = Describe("cert-injector", func() {
 				Expect(err).To(MatchError("hydrate add-layer failed: hydrate add-layer is unhappy"))
 
 				Expect(fakeConfig.WriteCall.Receives[0].BundleDir).NotTo(BeAnExistingFile())
-				Expect(fakeCmd.RunCall.Receives[5].Executable).To(ContainSubstring("groot.exe"))
-				Expect(fakeCmd.RunCall.Receives[5].Args).To(ConsistOf("--driver-store", driverStore, "delete", ContainSubstring("layer")))
+				Expect(fakeCmd.RunCall.Receives[4].Executable).To(ContainSubstring("hydrate.exe"))
+				Expect(fakeCmd.RunCall.Receives[4].Args).To(ConsistOf("add-layer", "-ociImage", ociImageUri, "-layer", ContainSubstring("diff-output")))
+				Expect(stdout.PrintlnCall.Receives[0].Args[0]).To(Equal("hydrate add-layer is unhappy"))
 				Expect(layerTgz).NotTo(BeAnExistingFile())
 			})
 		})
