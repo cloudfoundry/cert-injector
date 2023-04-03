@@ -1,14 +1,21 @@
 module code.cloudfoundry.org/cert-injector
 
-go 1.16
+go 1.19
 
 require (
-	github.com/hpcloud/tail v1.0.1-0.20180514194441-a1dbeea552b7 // indirect
-	github.com/onsi/ginkgo v1.7.0
-	github.com/onsi/gomega v1.4.3
+	github.com/onsi/ginkgo/v2 v2.9.2
+	github.com/onsi/gomega v1.27.4
 	github.com/opencontainers/runtime-spec v1.0.1
-	golang.org/x/net v0.0.0-20181220203305-927f97764cc3 // indirect
-	golang.org/x/sys v0.0.0-20190102155601-82a175fd1598 // indirect
-	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
-	gopkg.in/yaml.v2 v2.2.2 // indirect
+)
+
+require (
+	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
+	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/tools v0.7.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

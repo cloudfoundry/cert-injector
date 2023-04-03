@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"code.cloudfoundry.org/cert-injector/container"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	oci "github.com/opencontainers/runtime-spec/specs-go"
 )
