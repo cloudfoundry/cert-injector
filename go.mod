@@ -3,7 +3,7 @@ module code.cloudfoundry.org/cert-injector
 go 1.19
 
 require (
-	github.com/onsi/ginkgo/v2 v2.12.0
+	github.com/onsi/ginkgo/v2 v2.12.1
 	github.com/onsi/gomega v1.27.10
 	github.com/opencontainers/runtime-spec v1.1.0
 )
