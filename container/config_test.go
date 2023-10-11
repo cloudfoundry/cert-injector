@@ -2,7 +2,6 @@ package container_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -18,11 +17,13 @@ var _ = Describe("Config", func() {
 		certDirectory string
 		grootOutput   string
 		path          string
+		err           error
 
 		conf container.Config
 	)
 	BeforeEach(func() {
-		bundleDir = os.TempDir()
+		bundleDir, err = os.MkdirTemp("", "cert-injector-config-test-*")
+		Expect(err).ToNot(HaveOccurred())
 		certDirectory = "some-directory-containing-certs"
 		grootOutput = `{"ociVersion": "2.2.2"}`
 		path = filepath.Join(bundleDir, "config.json")
@@ -35,10 +36,10 @@ var _ = Describe("Config", func() {
 	})
 
 	It("the config.json contains a process spec to import the certificates, and bind-mounts the certificates into the container", func() {
-		err := conf.Write(bundleDir, grootOutput, certDirectory)
+		err = conf.Write(bundleDir, grootOutput, certDirectory)
 		Expect(err).NotTo(HaveOccurred())
 
-		data, err := ioutil.ReadFile(path)
+		data, err := os.ReadFile(path)
 		Expect(err).NotTo(HaveOccurred())
 
 		cont := oci.Spec{}
@@ -50,7 +51,7 @@ var _ = Describe("Config", func() {
 
 	Context("when the groot output is invalid json", func() {
 		It("returns  helpful error message", func() {
-			err := conf.Write(bundleDir, "$$$", certDirectory)
+			err = conf.Write(bundleDir, "$$$", certDirectory)
 			Expect(err).To(MatchError("json unmarshal groot output: invalid character '$' looking for beginning of value"))
 		})
 	})

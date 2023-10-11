@@ -65,8 +65,7 @@ func (i Injector) InjectCert(grootDriverStore, uri, certDirectory string) error 
 		}
 	}()
 
-	bundleDir := filepath.Join(os.TempDir(), containerId)
-	err = os.MkdirAll(bundleDir, 0755)
+	bundleDir, err := os.MkdirTemp("", containerId)
 	if err != nil {
 		return fmt.Errorf("create bundle directory failed: %s", err)
 	}
