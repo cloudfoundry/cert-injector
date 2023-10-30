@@ -48,7 +48,7 @@ func (i Injector) InjectCert(grootDriverStore, uri, certDirectory string) error 
 		return fmt.Errorf("hydrate remove-layer -ociImage %s failed: %s\n", uri, err)
 	}
 
-	containerId := fmt.Sprintf("layer-%d", int32(time.Now().Unix()))
+	containerId := fmt.Sprintf("layer-%d", int32(time.Now().UnixNano()))
 
 	grootOutput, stderr, err := i.cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri, containerId)
 	if err != nil {
@@ -65,7 +65,8 @@ func (i Injector) InjectCert(grootDriverStore, uri, certDirectory string) error 
 		}
 	}()
 
-	bundleDir, err := os.MkdirTemp("", containerId)
+	bundleDir := filepath.Join(os.TempDir(), containerId)
+	err = os.MkdirAll(bundleDir, 0755)
 	if err != nil {
 		return fmt.Errorf("create bundle directory failed: %s", err)
 	}

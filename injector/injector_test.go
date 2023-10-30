@@ -3,6 +3,8 @@ package injector_test
 import (
 	"errors"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"code.cloudfoundry.org/cert-injector/fakes"
 	"code.cloudfoundry.org/cert-injector/injector"
@@ -74,6 +76,9 @@ var _ = Describe("cert-injector", func() {
 		By("calling winc to create a container")
 		Expect(fakeCmd.RunCall.Receives[2].Executable).To(ContainSubstring("winc.exe"))
 		Expect(fakeCmd.RunCall.Receives[2].Args).To(ConsistOf("run", "-b", ContainSubstring("layer"), ContainSubstring("layer")))
+
+		By("creating a bundle directory using the name of the containerId passed to winc")
+		Expect(fakeCmd.RunCall.Receives[2].Args[2]).To(Equal(filepath.Join(os.TempDir(), fakeCmd.RunCall.Receives[2].Args[3])))
 
 		By("calling diff-exporter to export the top layer")
 		Expect(fakeCmd.RunCall.Receives[3].Executable).To(ContainSubstring("diff-exporter.exe"))
