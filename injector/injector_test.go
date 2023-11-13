@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("cert-injector", func() {
+var _ = Describe("cert-injector", Serial, func() {
 	var (
 		fakeCmd    *fakes.Cmd
 		fakeConfig *fakes.Config
