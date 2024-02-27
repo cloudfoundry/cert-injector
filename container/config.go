@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	oci "github.com/opencontainers/runtime-spec/specs-go"
-	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
 const ImportCertificatePs = `$ErrorActionPreference = "Stop"; trap { $host.SetShouldExit(1) }; ls "c:\trusted_certs" | foreach {$file="c:\trusted_certs\"+$_.Name; Import-Certificate -CertStoreLocation Cert:\\LocalMachine\Root -FilePath $file}`
@@ -37,7 +36,7 @@ func (c Config) Write(bundleDir, grootOutput, certDirectory string) error {
 		Cwd:  `C:\`,
 	}
 
-	config.Mounts = []specs.Mount{{
+	config.Mounts = []oci.Mount{{
 		Destination: "c:\\trusted_certs",
 		Source:      certDirectory,
 	}}
