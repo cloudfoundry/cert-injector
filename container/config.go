@@ -3,7 +3,7 @@ package container
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	oci "github.com/opencontainers/runtime-spec/specs-go"
@@ -46,7 +46,7 @@ func (c Config) Write(bundleDir, grootOutput, certDirectory string) error {
 		return fmt.Errorf("JSON marshal config failed: %s", err)
 	}
 
-	err = ioutil.WriteFile(filepath.Join(bundleDir, "config.json"), marshalledConfig, 0644)
+	err = os.WriteFile(filepath.Join(bundleDir, "config.json"), marshalledConfig, 0644)
 	if err != nil {
 		return fmt.Errorf("Write config.json failed: %s", err)
 	}
