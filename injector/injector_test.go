@@ -2,7 +2,6 @@ package injector_test
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -46,7 +45,7 @@ var _ = Describe("cert-injector", Serial, func() {
 			Expect(executable).To(ContainSubstring("diff-exporter.exe"))
 			layerTgz = args[1]
 			Expect(layerTgz).To(ContainSubstring("diff-output"))
-			Expect(ioutil.WriteFile(layerTgz, []byte("some-tar-data"), 0644)).To(Succeed())
+			Expect(os.WriteFile(layerTgz, []byte("some-tar-data"), 0644)).To(Succeed())
 			return "", "", nil
 		}
 
@@ -179,7 +178,7 @@ var _ = Describe("cert-injector", Serial, func() {
 					Expect(executable).To(ContainSubstring("diff-exporter.exe"))
 					layerTgz = args[1]
 					Expect(layerTgz).To(ContainSubstring("diff-output"))
-					Expect(ioutil.WriteFile(layerTgz, []byte("some-tar-data"), 0644)).To(Succeed())
+					Expect(os.WriteFile(layerTgz, []byte("some-tar-data"), 0644)).To(Succeed())
 					return "", "", nil
 				}
 				fakeCmd.RunCall.Returns[4].Stdout = "hydrate add-layer is unhappy"
