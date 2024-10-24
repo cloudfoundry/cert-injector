@@ -48,6 +48,7 @@ func (i Injector) InjectCert(grootDriverStore, uri, certDirectory string) error 
 		return fmt.Errorf("hydrate remove-layer -ociImage %s failed: %s\n", uri, err)
 	}
 
+	// #nosec G115 - we don't care about integer overflow here, just trying to generate a pseudo random string for the layer
 	containerId := fmt.Sprintf("layer-%d", int32(time.Now().UnixNano()))
 
 	grootOutput, stderr, err := i.cmd.Run(grootBin, "--driver-store", grootDriverStore, "create", uri, containerId)
@@ -84,6 +85,7 @@ func (i Injector) InjectCert(grootDriverStore, uri, certDirectory string) error 
 		return fmt.Errorf("winc run failed: %s", err)
 	}
 
+	// #nosec G115 - we don't care about integer overflow here, just trying to generate a pseudo random string for the layer
 	diffOutputFile := filepath.Join(os.TempDir(), fmt.Sprintf("diff-output%d", int32(time.Now().Unix())))
 	stdout, stderr, err = i.cmd.Run(diffExporterBin, "-outputFile", diffOutputFile, "-containerId", containerId, "-bundlePath", bundleDir)
 	if err != nil {
